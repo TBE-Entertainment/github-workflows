@@ -7,12 +7,6 @@ on:
   push:
     branches: [ $default-branch ]
 
-  workflow_call:
-    inputs:
-      image_name:
-        required: true
-        type: string
-
 env:
   REGISTRY: ghcr.io
   ORG: TBE-Entertainment
@@ -41,6 +35,11 @@ jobs:
     - name: Build container image
       run: mvn docker:build
 
+    # Extract artifact name out from pom.xml project file
+    - name: Get image name
+      id: image_name
+      run: echo ::set-output name=image_name::$(echo '${project.groupId}:${project.artifactId}:${project.version}' | mvn -N -q -DforceStdout help:evaluate)
+
     # Login against a Docker registry except on PR
     # https://github.com/docker/login-action
     - name: Log into registry ${{ env.REGISTRY }}
@@ -58,7 +57,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
       with:
-        images: ${{ env.REGISTRY }}/${{ env.ORG }}/${{ inputs.image_name }}
+        images: ${{ env.REGISTRY }}/${{ env.ORG }}/${{ steps.image_name.outputs.image_name }}
 
     # Build and push Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
