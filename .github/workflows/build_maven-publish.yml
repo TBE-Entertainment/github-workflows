@@ -36,7 +36,7 @@ jobs:
     # Extract artifact name out from pom.xml project file
     - name: Get image name
       id: image_name
-      run: echo ::set-output name=image_name::$(echo '${project.groupId}/${project.artifactId}:${project.version}' | mvn -N -q -DforceStdout help:evaluate)
+      run: echo ::set-output name=image_name::$(echo '${project.groupId}/${project.artifactId}' | mvn -N -q -DforceStdout help:evaluate)
 
     # Login against a Docker registry except on PR
     # https://github.com/docker/login-action
