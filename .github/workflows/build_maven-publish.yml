@@ -4,8 +4,7 @@
 name: Build package with Maven and publish as container image to GitHub Packages
 
 on:
-  push:
-    branches: [ $default-branch ]
+  workflow_call:
 
 env:
   REGISTRY: ghcr.io
