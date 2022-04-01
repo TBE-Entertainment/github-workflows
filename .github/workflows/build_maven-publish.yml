@@ -30,8 +30,8 @@ jobs:
     - name: Package with Maven
       run: mvn clean package
 
-    - name: Build container image
-      run: mvn docker:build
+    # - name: Build container image
+    #   run: mvn docker:build
 
     # Extract artifact name out from pom.xml project file
     - name: Get image name
