@@ -57,6 +57,27 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ github.repository }}
 
+    # Use generic Dockerfile for all builds
+    - name: Create Dockerfile
+      run: |
+        cat > Dockerfile << 'EOF'
+        FROM openjdk:11.0-jre-slim
+
+        ARG SPRING_PROFILES_ACTIVE
+        ARG WAIT_TIMEOUT
+        ARG PORT
+
+        ENV SPRING_PROFILES_ACTIVE ${SPRING_PROFILES_ACTIVE:-local}
+        ENV WAIT_TIMEOUT ${WAIT_TIMEOUT:-'60s'}
+        ENV PORT ${PORT:-8080}
+
+        EXPOSE ${PORT}
+
+        COPY target/*.jar /opt/app.jar
+
+        CMD java -jar /opt/app.jar
+        EOF
+
     # Build and push Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
     - name: Build and push Docker image
