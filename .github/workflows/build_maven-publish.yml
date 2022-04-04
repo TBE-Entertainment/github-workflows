@@ -30,6 +30,12 @@ jobs:
     - name: Package with Maven
       run: mvn clean package
 
+    - name: Check the built files
+      run: |
+        ls -la 
+        ls -la target/
+        find . -type f -name *war*
+
     # - name: Build container image
     #   run: mvn docker:build
 
