@@ -1,0 +1,100 @@
+# This workflow will deploy a container image from Github Packages container registry
+# to a Kubernetes cluster by means of Flux GitOps toolkit
+
+name: Deploy to Kubernetes (Flux)
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        description: 'Application name to be deployed'
+        required: true
+        type: string
+      app_version:
+        description: 'Application version to be deployed'
+        required: true
+        type: string
+      app_ks_path:
+        description: 'Path to kustomization file where deployment image version is to be updated'
+        required: true
+        type: string
+      flux_ks:
+        description: 'Flux kustomization deployment belongs to'
+        required: true
+        type: string
+      flux_repo:
+        description: 'Flux repository for cluster management'
+        required: true
+        type: string
+    secrets:
+      b64kubeconfig:
+        description: 'Kubeconfig file to access Kubernetes cluster in Base64 format'
+        required: true
+      token:
+        description: 'GitHub token with write privileges to make git commits'
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest 
+
+    steps:
+      - name: Add hosts entry
+        run: sudo echo "84.16.251.84 k8s-api.pulsemusic.com" | sudo tee -a /etc/hosts
+
+      - name: Install Flux
+        run: curl -s https://fluxcd.io/install.sh | sudo bash
+
+      - name: Checkout Flux repo
+        uses: actions/checkout@master
+        with:
+          repository: ${{ github.repository_owner }}/${{ inputs.flux_repo }}
+          token: ${{ secrets.token }}
+
+      - name: Update application version
+        run: | 
+          yq --version
+          echo 'Working with kustomization file:'
+          ls ${APP_KS_PATH}
+          # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
+          # ref: https://github.com/github/feedback/discussions/10553
+          export IMAGE_REPO_LOWER=${IMAGE_REPO,,}
+          echo "Image repo is ${IMAGE_REPO_LOWER}"
+          echo "New app version is ${APP_VERSION}"
+          echo 'Before changes:'
+          yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
+          yq -i '(.images[] | select(.name == env(IMAGE_REPO_LOWER))).newTag = env(APP_VERSION)' ${APP_KS_PATH}
+          echo 'After changes:'
+          yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
+
+          # Make a git commit
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git status
+          git blame ${APP_KS_PATH}
+          git add ${APP_KS_PATH}
+          git commit -m "Update $APP_NAME to version $APP_VERSION"
+          git status
+          git push origin main
+        env:
+          IMAGE_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
+          APP_VERSION: ${{ inputs.app_version }}
+          APP_KS_PATH: ${{ inputs.app_ks_path }}
+          APP_NAME: ${{ inputs.app_name }}
+
+      - name: Check deployment status in Kubernetes
+        run: |
+          echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
+          kubectl config view
+          kubectl get pods
+          flux reconcile source git flux-system
+          flux reconcile ks ${FLUX_KS}
+          kubectl rollout status deployment ${APP_NAME}
+        env:
+          B64_KUBECONFIG: ${{ secrets.b64kubeconfig }}
+          KUBECONFIG: /tmp/kubeconfig
+          APP_NAME: ${{ inputs.app_name }}
+          FLUX_KS: ${{ inputs.flux_ks }}
