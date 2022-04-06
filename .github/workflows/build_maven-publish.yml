@@ -67,21 +67,25 @@ jobs:
     - name: Create Dockerfile
       run: |
         cat > Dockerfile << 'EOF'
-        FROM openjdk:11.0-jre-slim
+        FROM tomcat:9.0-jre11-openjdk-slim-bullseye
 
-        ARG SPRING_PROFILES_ACTIVE
         ARG WAIT_TIMEOUT
         ARG PORT
 
-        ENV SPRING_PROFILES_ACTIVE ${SPRING_PROFILES_ACTIVE:-local}
         ENV WAIT_TIMEOUT ${WAIT_TIMEOUT:-'60s'}
         ENV PORT ${PORT:-8080}
 
+        RUN addgroup --gid 1000 www-group && adduser --system --disabled-password --gecos "" --gid 1000 --uid 1000 www-user
+        RUN chown -hR 1000:1000 ${CATALINA_HOME}
+
         EXPOSE ${PORT}
 
-        COPY target/*.war /opt/app.war
+        COPY --chown=1000:root target/*.war ${CATALINA_HOME}/webapps/
 
-        CMD java -jar /opt/app.war
+        USER 1000
+
+        CMD ["catalina.sh", "run"]
+
         EOF
 
     # Build and push Docker image with Buildx (don't push on PR)
