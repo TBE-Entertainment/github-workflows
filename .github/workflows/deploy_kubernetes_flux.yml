@@ -42,9 +42,6 @@ jobs:
     runs-on: ubuntu-latest 
 
     steps:
-      - name: Add hosts entry
-        run: sudo echo "84.16.251.84 k8s-api.pulsemusic.com" | sudo tee -a /etc/hosts
-
       - name: Install Flux
         run: curl -s https://fluxcd.io/install.sh | sudo bash
 
