@@ -37,7 +37,7 @@ jobs:
         cache: maven
 
     - name: Package with Maven
-      run: mvn clean package
+      run: mvn -B clean package
 
     - name: Check the built files
       run: |
@@ -82,6 +82,7 @@ jobs:
 
     # Use generic Dockerfile for all builds
     - name: Create Dockerfile
+      if: github.event_name != 'pull_request'
       run: |
         cat > Dockerfile <<'EOF'
         FROM tomcat:9.0-jre11-openjdk-slim-bullseye
