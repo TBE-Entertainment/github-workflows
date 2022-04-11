@@ -1,0 +1,27 @@
+# This workflow will run maven checks, to be used with PRs
+
+name: Run Jave code scans and code style checks
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+      
+    - name: Package with Maven
+      run: mvn clean install -Pstyle
