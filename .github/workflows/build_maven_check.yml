@@ -24,4 +24,4 @@ jobs:
         cache: maven
       
     - name: Package with Maven
-      run: mvn clean install -Pstyle
+      run: mvn -B clean install -Pstyle
