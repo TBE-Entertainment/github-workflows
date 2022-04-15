@@ -9,7 +9,7 @@ on:
       java_version:
         description: 'Version of JDK to run builds on'
         type: string
-        required: true
+        required: false
         default: '11'
       tomcat_root_context:
         description: 'Whether to use root context in Tomcat docker image'
