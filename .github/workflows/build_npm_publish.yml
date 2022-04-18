@@ -63,7 +63,7 @@ jobs:
         for var in $(awk -F= '{print$1}' ${ENV_FILE_PATH})
         do 
           echo "${var}='%${var}%'" >> .env
-          echo "find /usr/share/nginx/html -name '*.js' -exec sed -i \"s~%${var}%~\$${var}~g w /dev/stdout\" {} \;" >> entrypoint.sh
+          echo "find /usr/share/nginx/html -name '*.js' -exec sed -i \"s~%${var}%~\$${var}~g" {} \;" >> entrypoint.sh
         done
 
         echo ".env file content:"
