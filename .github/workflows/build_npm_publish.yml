@@ -51,7 +51,7 @@ jobs:
 
         # Treat PUBLIC_URL individually
         echo "PUBLIC_URL='%PUBLIC_URL%'" >> .env
-        echo "sed -i \"s~%PUBLIC_URL%~\$$PUBLIC_URL~g\" /usr/share/nginx/html/index.html" >> entrypoint.sh
+        echo "sed -i \"s~%PUBLIC_URL%~\$PUBLIC_URL~g\" /usr/share/nginx/html/index.html" >> entrypoint.sh
 
         # Treat all other env vars defined in .env file
         for var in $(awk -F= '{print$1}' ${ENV_FILE_PATH})
