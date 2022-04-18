@@ -34,24 +34,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up NPM
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ inputs.node_version }}
-        cache: npm
-
-    - name: Restore dependencies
-      run: npm ci
-
-    - name: Build the application
-      run: npm run build
-
-    - name: Check the built files
-      run: find build/
+    ### Versioning
 
     - name: Generate version
       id: version
       run: echo ::set-output name=image_tag::${GITHUB_RUN_ID}-${GITHUB_SHA}
+    
+    ### Pre-build actions
 
     # Enable runtime environment variables
     - name: Create entrypoint
@@ -119,6 +108,25 @@ jobs:
 
         USER 1000
         EOF
+
+    ### Build actions
+
+    - name: Set up NPM
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: npm
+
+    - name: Restore dependencies
+      run: npm ci
+
+    - name: Build the application
+      run: npm run build
+
+    - name: Check the built files
+      run: find build/
+
+    ### Publish actions
 
     # Login against a Docker registry except on PR
     # https://github.com/docker/login-action
