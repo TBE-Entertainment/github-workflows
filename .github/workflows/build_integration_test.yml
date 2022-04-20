@@ -26,6 +26,11 @@ jobs:
           MONGO_INITDB_ROOT_USERNAME: pm-user
           MONGO_INITDB_ROOT_PASSWORD: pulsemusic
           MONGO_INITDB_DATABASE: pulsemusic-test
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
         ports:
           - 27017:27017
 
@@ -39,5 +44,5 @@ jobs:
         distribution: 'temurin'
         cache: maven
       
-    - name: Run code style check with Maven
+    - name: Run integration tests
       run: mvn -B clean install -Pintegration
