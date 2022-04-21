@@ -16,6 +16,10 @@ on:
         type: boolean
         required: false
         default: false
+    outputs:
+      app_version:
+        description: "The generated version from the build"
+        value: ${{ jobs.build.outputs.app_version }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

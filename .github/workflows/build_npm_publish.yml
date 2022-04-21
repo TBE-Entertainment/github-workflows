@@ -16,6 +16,10 @@ on:
         type: string
         required: false
         default: '.env.example'
+    outputs:
+      app_version:
+        description: "The generated version from the build"
+        value: ${{ jobs.build.outputs.app_version }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
