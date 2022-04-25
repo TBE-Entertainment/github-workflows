@@ -28,13 +28,13 @@ jobs:
         ports:
           - 27017:27017
       minio:
-        image: minio/minio
+        image: bitnami/minio:latest
         ports:
           - '9000:9000'
         env:
           MINIO_ROOT_USER: pulsemusic
           MINIO_ROOT_PASSWORD: pulsemusic
-        options: --entrypoint "minio server /data"
+        options: --name minio-server
 
     steps:
     - uses: actions/checkout@v3
