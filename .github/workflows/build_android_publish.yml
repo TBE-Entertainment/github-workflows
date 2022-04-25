@@ -1,0 +1,110 @@
+# This workflow will build an Android  pplication and publish it to Play Store
+
+name: Build Android application and publish to Play Store
+
+on:
+  workflow_call:
+    inputs:
+      ruby_version:
+        description: 'Version of Ruby to run builds on'
+        type: string
+        required: false
+        default: '2.7.2'
+      fastlane_lane:
+        description: 'The lane to run within Fastlane action'
+        type: string
+        required: false
+        default: 'build_and_deploy'
+      project_subdirectory:
+        description: 'The subdirectory relative to repository root where project is located'
+        type: string
+        required: false
+      GRADLE_BUILD_TASKS:
+        description: 'Space separated list of Gradle tasks to execute upon build'
+        type: string
+        required: true
+      GOOGLE_PACKAGE_NAME:
+        description: 'Google Play package name (App name)'
+        type: string
+        required: true
+      GOOGLE_PACKAGE_TRACK:
+        description: 'Google Play track name'
+        type: string
+        required: true
+      GOOGLE_PACKAGE_RELEASE_STATUS:
+        description: 'Google Play release status'
+        type: string
+        required: true
+      SIGNING_KEY_ALIAS:
+        description: 'Signing Key Store key alias'
+        type: string
+        required: true
+    secrets:
+      GOOGLE_CREDENTIALS:
+        description: 'Google credentials JSON in Base64 format'
+        required: true
+      SIGNING_STORE_PASSWORD:
+        description: 'Signing Key Store password'
+        required: true
+      SIGNING_KEY_PASSWORD:
+        description: 'Signing Key Store key password'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    # Set working directory for all steps at once
+    defaults:
+      run:
+        working-directory: ${{ inputs.project_subdirectory || '.' }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    ### Pre-build actions
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ inputs.ruby_version }}
+        bundler-cache: true
+        working-directory: ${{ inputs.project_subdirectory || '.' }}
+        
+    - name: Restore dependencies
+      run: |
+        bundle env
+        bundle install
+
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle', '**/*.gradle.kts') }}
+
+    - name: Setup Google credentials
+      run: echo ${GOOGLE_CREDENTIALS} | base64 -d > /tmp/google-sa.json
+      env:
+        GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+    ### Build actions
+
+    - uses: maierj/fastlane-action@v2.2.0
+      with:
+        lane: ${{ inputs.fastlane_lane }}
+        subdirectory: ${{ inputs.project_subdirectory }}
+      env:
+        GRADLE_BUILD_TASKS: ${{ inputs.GRADLE_BUILD_TASKS }}
+        GOOGLE_PACKAGE_NAME: ${{ inputs.GOOGLE_PACKAGE_NAME }}
+        GOOGLE_PACKAGE_TRACK: ${{ inputs.GOOGLE_PACKAGE_TRACK }}
+        GOOGLE_PACKAGE_RELEASE_STATUS: ${{ inputs.GOOGLE_PACKAGE_RELEASE_STATUS }}
+        SIGNING_KEY_ALIAS: ${{ inputs.SIGNING_KEY_ALIAS }}
+        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
