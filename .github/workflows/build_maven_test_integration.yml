@@ -34,7 +34,7 @@ jobs:
         env:
           MINIO_ROOT_USER: pulsemusic
           MINIO_ROOT_PASSWORD: pulsemusic
-        options: server /data
+        options: --entrypoint "minio server /data"
 
     steps:
     - uses: actions/checkout@v3
