@@ -27,6 +27,14 @@ jobs:
           MONGO_INITDB_ROOT_PASSWORD: pulsemusic
         ports:
           - 27017:27017
+      minio:
+        image: minio/minio
+        ports:
+          - '9000:9000'
+        environment:
+          MINIO_ROOT_USER: pulsemusic
+          MINIO_ROOT_PASSWORD: pulsemusic
+        command: server /data
 
     steps:
     - uses: actions/checkout@v3
