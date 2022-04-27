@@ -11,6 +11,11 @@ on:
         type: string
         required: false
         default: '14'
+      gitversion_image_version:
+        description: 'Version of GitVersion docker image to use'
+        type: string
+        required: false
+        default: '5.10.1-alpine.3.14-6.0'
       env_file_path:
         description: 'Path to env file with a list of variables'
         type: string
@@ -33,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     outputs:
@@ -41,12 +46,54 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0   # requirement of GitVersion
 
     ### Versioning
 
     - name: Generate version
       id: version
-      run: echo ::set-output name=image_tag::${GITHUB_RUN_ID}-${GITHUB_SHA}
+      run: |
+        set -euo pipefail
+
+        echo "Branch is ${GITHUB_REF_NAME}"
+
+        ### This is specific to using GitVersion with GitHub 
+        ### 'develop' and 'main' branches if they exist need to be checked out explicitly prior to GitVersion run
+        git checkout develop || true
+        git checkout main || true
+        git checkout --force -B ${GITHUB_REF_NAME}
+
+        docker run --rm -v "$(pwd):/repo" gittools/gitversion:${GITVERSION_IMAGE_VERSION} \
+          /nocache \
+          /nonormalize \
+          /verbosity Verbose \
+          /overrideconfig assembly-versioning-format='{Major}.{Minor}.{Patch}-{PreReleaseLabel}${ShortSha}' \
+          /targetpath /repo | tee /tmp/version 
+
+        VERSION_LONG=$(jq -r '.AssemblySemVer' /tmp/version)
+        VERSION_SHORT=$(jq -r '.MajorMinorPatch' /tmp/version)
+        echo "Long Version is ${VERSION_LONG}"
+        echo "Short Version is ${VERSION_SHORT}"
+        
+        if [ "${GITHUB_REF}" = 'refs/heads/main' ]
+        then
+          echo ::set-output name=image_tag::${VERSION_SHORT}
+          echo "Using ${VERSION_SHORT} version for the built artifacts"
+        else
+          echo ::set-output name=image_tag::${VERSION_LONG}
+          echo "Using ${VERSION_LONG} version for the built artifacts"
+        fi
+      env:
+        GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
+
+    - name: Add tag to repository
+      if: contains('refs/heads/main', github.ref)
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
+        custom_tag: ${{ steps.version.outputs.image_tag }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     
     ### Pre-build actions
 
