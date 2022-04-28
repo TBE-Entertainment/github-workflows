@@ -16,6 +16,10 @@ on:
         type: string
         required: false
         default: '5.10.1-alpine.3.14-6.0'
+      project_subdirectory:
+        description: 'The subdirectory relative to repository root where project is located'
+        type: string
+        required: false
       env_file_path:
         description: 'Path to env file with a list of variables'
         type: string
@@ -44,6 +48,11 @@ jobs:
     outputs:
       app_version: ${{ steps.version.outputs.image_tag }}
 
+    # Set working directory for all steps at once
+    defaults:
+      run:
+        working-directory: ${{ inputs.project_subdirectory || '.' }} 
+
     steps:
     - uses: actions/checkout@v3
       with:
@@ -53,6 +62,7 @@ jobs:
 
     - name: Generate version
       id: version
+      working-directory: '.'
       run: |
         set -euo pipefail
 
@@ -218,7 +228,7 @@ jobs:
       id: build-and-push
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       with:
-        context: .
+        context: ${{ inputs.project_subdirectory || '.' }} 
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
