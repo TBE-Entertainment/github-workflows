@@ -47,7 +47,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        ref: ${{ github.head_ref }}   # requirement of GitVersion
         fetch-depth: 0   # requirement of GitVersion
 
     ### Versioning
@@ -80,8 +79,10 @@ jobs:
         if [ "${GITHUB_REF}" = 'refs/heads/main' ]
         then
           echo ::set-output name=image_tag::${VERSION_SHORT}
+          echo "Using ${VERSION_SHORT} version for the built artifacts"
         else
           echo ::set-output name=image_tag::${VERSION_LONG}
+          echo "Using ${VERSION_LONG} version for the built artifacts"
         fi
       env:
         GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
