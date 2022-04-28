@@ -48,6 +48,7 @@ jobs:
       - name: Checkout Flux repo
         uses: actions/checkout@master
         with:
+          ref: main
           repository: ${{ github.repository_owner }}/${{ inputs.flux_repo }}
           token: ${{ secrets.token }}
 
