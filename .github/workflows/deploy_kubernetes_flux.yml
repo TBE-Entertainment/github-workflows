@@ -54,6 +54,7 @@ jobs:
       - name: Update application version
         run: | 
           yq --version
+          export APP_NAMESPACE=$(basename $(dirname ${APP_KS_PATH}))
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
           # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
@@ -73,7 +74,7 @@ jobs:
           git status
           git blame ${APP_KS_PATH}
           git add ${APP_KS_PATH}
-          git commit -m "Update $APP_NAME to version $APP_VERSION"
+          git commit -m "Update $APP_NAME to version $APP_VERSION at $APP_NAMESPACE namespace"
           git status
           git push origin main
         env:
