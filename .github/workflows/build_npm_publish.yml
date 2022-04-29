@@ -72,7 +72,7 @@ jobs:
         ### 'develop' and 'main' branches if they exist need to be checked out explicitly prior to GitVersion run
         git checkout develop || true
         git checkout main || true
-        git checkout --force -B ${GITHUB_REF_NAME}
+        git checkout ${GITHUB_REF_NAME}
 
         docker run --rm -v "$(pwd):/repo" gittools/gitversion:${GITVERSION_IMAGE_VERSION} \
           /nocache \
