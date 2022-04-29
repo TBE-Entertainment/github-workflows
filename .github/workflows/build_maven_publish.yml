@@ -11,6 +11,15 @@ on:
         type: string
         required: false
         default: '11'
+      gitversion_image_version:
+        description: 'Version of GitVersion docker image to use'
+        type: string
+        required: false
+        default: '5.10.1-alpine.3.14-6.0'
+      project_subdirectory:
+        description: 'The subdirectory relative to repository root where project is located'
+        type: string
+        required: false
       tomcat_root_context:
         description: 'Whether to use root context in Tomcat docker image'
         type: boolean
@@ -33,20 +42,67 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     outputs:
       app_version: ${{ steps.version.outputs.image_tag }}
 
+    # Set working directory for all steps at once
+    defaults:
+      run:
+        working-directory: ${{ inputs.project_subdirectory || '.' }} 
+
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}   # requirement of GitVersion
+        fetch-depth: 0   # requirement of GitVersion
 
     ### Versioning
 
     - name: Generate version
       id: version
-      run: echo ::set-output name=image_tag::${GITHUB_RUN_ID}-${GITHUB_SHA}
+      working-directory: '.'
+      run: |
+        set -euo pipefail
+
+        echo "Branch is ${GITHUB_REF_NAME}"
+
+        ### This is specific to using GitVersion with GitHub 
+        ### 'develop' and 'main' branches if they exist need to be checked out explicitly prior to GitVersion run
+        git checkout develop || true
+        git checkout main || true
+        git checkout ${GITHUB_REF_NAME}
+
+        docker run --rm -v "$(pwd):/repo" gittools/gitversion:${GITVERSION_IMAGE_VERSION} \
+          /nocache \
+          /nonormalize \
+          /verbosity Verbose \
+          /overrideconfig assembly-versioning-format='{Major}.{Minor}.{Patch}-{PreReleaseLabel}${ShortSha}' \
+          /targetpath /repo | tee /tmp/version 
+
+        VERSION_LONG=$(jq -r '.AssemblySemVer' /tmp/version)
+        VERSION_SHORT=$(jq -r '.MajorMinorPatch' /tmp/version)
+        echo "Long Version is ${VERSION_LONG}"
+        echo "Short Version is ${VERSION_SHORT}"
+        
+        if [ "${GITHUB_REF}" = 'refs/heads/main' ]
+        then
+          echo ::set-output name=image_tag::${VERSION_SHORT}
+        else
+          echo ::set-output name=image_tag::${VERSION_LONG}
+        fi
+      env:
+        GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
+        
+    - name: Add tag to repository
+      if: contains('refs/heads/main', github.ref)
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
+        custom_tag: ${{ steps.version.outputs.image_tag }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     ### Pre-build actions
 
@@ -141,7 +197,7 @@ jobs:
       id: build-and-push
       uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       with:
-        context: .
+        context: ${{ inputs.project_subdirectory || '.' }} 
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
