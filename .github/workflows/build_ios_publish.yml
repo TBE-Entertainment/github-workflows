@@ -84,6 +84,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pods-
 
+    - name: [Temporary] Downgrade cocoapods to overcome 403 cdn errors
+      run: |
+        gem uninstall cocoapods
+        gem install cocoapods -v 1.8
+        pod repo add-cdn trunk https://cdn.cocoapods.org/
+        pod install || true
+        gem install cocoapods
+        pod install
+
     - name: Import Code-Signing Certificates
       uses: Apple-Actions/import-codesign-certs@v1
       with:
