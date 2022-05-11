@@ -84,7 +84,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pods-
 
-    - name: [Temporary] Downgrade cocoapods to overcome 403 cdn errors
+    - name: Temporary - downgrade cocoapods to overcome 403 cdn errors
       run: |
         gem uninstall cocoapods
         gem install cocoapods -v 1.8
