@@ -19,6 +19,16 @@ on:
         description: 'The subdirectory relative to repository root where project is located'
         type: string
         required: false
+      send_mail_notification:
+        description: 'Whether to notify about the new build over email'
+        type: boolean
+        required: false
+        default: true
+      mail_recepients_list:
+        description: 'Comma-separated list of email recepients for notifications'
+        type: string
+        required: false
+        default: ''
       GRADLE_BUILD_TASKS:
         description: 'Space separated list of Gradle tasks to execute upon build'
         type: string
@@ -39,6 +49,16 @@ on:
         description: 'Signing Key Store key alias'
         type: string
         required: true
+      mail_server:
+        description: 'SMTP server address'
+        type: string
+        required: true
+        default: 'smtp.office365.com'
+      mail_server_port:
+        description: 'SMTP server port'
+        type: string
+        required: true
+        default: '587'
     secrets:
       GOOGLE_CREDENTIALS:
         description: 'Google credentials JSON in Base64 format'
@@ -49,6 +69,10 @@ on:
       SIGNING_KEY_PASSWORD:
         description: 'Signing Key Store key password'
         required: true
+      mail_username:
+        description: 'SMTP username for mail notifications'
+      mail_password:
+        description: 'SMTP password for mail notifications'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -108,3 +132,28 @@ jobs:
         SIGNING_KEY_ALIAS: ${{ inputs.SIGNING_KEY_ALIAS }}
         SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
         SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+
+    ### Post-build actions
+
+    - name: Send email notification of the new build
+      uses: dawidd6/action-send-mail@v3
+      if: inputs.send_mail_notification == true
+      with:
+        # Required mail server address:
+        server_address: ${{ inputs.MAIL_SERVER }}
+        # Required mail server port:
+        server_port: ${{ inputs.MAIL_SERVER_PORT }}
+        # Optional (recommended): mail server username:
+        username: ${{ secrets.MAIL_USERNAME }}
+        # Optional (recommended) mail server password:
+        password: ${{ secrets.MAIL_PASSWORD }}
+        # Required mail subject:
+        subject: New build for ${{ inputs.GOOGLE_PACKAGE_NAME }} Android app
+        # Required recipients' addresses:
+        to: ${{ inputs.mail_recepients_list }}
+        # Required sender full name (address can be skipped):
+        from: GitHub CI # <user@example.com>
+        # Optional plain body:
+        body: New version of ${{ inputs.GOOGLE_PACKAGE_NAME }} application is available at ${{ inputs.GOOGLE_PACKAGE_TRACK }} track, check it out!
+        # Optional attachments:
+        attachments: ${{ inputs.project_subdirectory || '.' }}/app/build/outputs/bundle/*/*.aab
