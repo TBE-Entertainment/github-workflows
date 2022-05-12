@@ -29,6 +29,14 @@ on:
         type: string
         required: false
         default: ''
+      mail_server:
+        description: 'SMTP server address'
+        type: string
+        required: false
+      mail_server_port:
+        description: 'SMTP server port'
+        type: string
+        required: false
       GRADLE_BUILD_TASKS:
         description: 'Space separated list of Gradle tasks to execute upon build'
         type: string
@@ -49,17 +57,13 @@ on:
         description: 'Signing Key Store key alias'
         type: string
         required: true
-      mail_server:
-        description: 'SMTP server address'
-        type: string
-        required: true
-        default: 'smtp.office365.com'
-      mail_server_port:
-        description: 'SMTP server port'
-        type: string
-        required: true
-        default: '587'
     secrets:
+      mail_username:
+        description: 'SMTP username for mail notifications'
+        required: false
+      mail_password:
+        description: 'SMTP password for mail notifications'
+        required: false
       GOOGLE_CREDENTIALS:
         description: 'Google credentials JSON in Base64 format'
         required: true
@@ -69,10 +73,6 @@ on:
       SIGNING_KEY_PASSWORD:
         description: 'Signing Key Store key password'
         required: true
-      mail_username:
-        description: 'SMTP username for mail notifications'
-      mail_password:
-        description: 'SMTP password for mail notifications'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -155,5 +155,3 @@ jobs:
         from: GitHub CI # <user@example.com>
         # Optional plain body:
         body: New version of ${{ inputs.GOOGLE_PACKAGE_NAME }} application is available at ${{ inputs.GOOGLE_PACKAGE_TRACK }} track, check it out!
-        # Optional attachments:
-        attachments: ${{ inputs.project_subdirectory || '.' }}/app/build/outputs/bundle/*/*.aab
