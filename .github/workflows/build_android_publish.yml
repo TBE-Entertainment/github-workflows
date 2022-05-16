@@ -135,6 +135,12 @@ jobs:
 
     ### Post-build actions
 
+    - name: Zip built artifacts
+      run: |
+        mv ./app/build/outputs/apk/*/release/*.apk pulsemusic.apk || true
+        mv ./app/build/outputs/aab/*/release/*.aab pulsemusic.aab || true
+        zip pulsemusic.zip pulsemusic.apk pulsemusic.aab 
+
     - name: Send email notification of the new build
       uses: dawidd6/action-send-mail@v3
       if: inputs.send_mail_notification == true
@@ -155,3 +161,5 @@ jobs:
         from: GitHub CI # <user@example.com>
         # Optional plain body:
         body: New version of ${{ inputs.GOOGLE_PACKAGE_NAME }} application is available at ${{ inputs.GOOGLE_PACKAGE_TRACK }} track, check it out!
+        # Optional attachments:
+        attachments: ${{ inputs.project_subdirectory || '.' }}/pulsemusic.zip
