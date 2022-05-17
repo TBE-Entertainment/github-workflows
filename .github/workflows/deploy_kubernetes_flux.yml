@@ -41,6 +41,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest 
 
+    timeout-minutes: 30
+
     steps:
       - name: Install Flux
         run: curl -s https://fluxcd.io/install.sh | sudo bash
