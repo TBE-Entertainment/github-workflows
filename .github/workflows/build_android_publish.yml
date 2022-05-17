@@ -19,6 +19,19 @@ on:
         description: 'The subdirectory relative to repository root where project is located'
         type: string
         required: false
+      bundletool_image:
+        description: 'Repository with supplementary build tools container images'
+        type: string
+        required: true
+      container_registry:
+        description: 'Container registry with supplementary build tools container images'
+        type: string
+        required: false
+        default: 'ghcr.io'
+      container_registry_user:
+        description: 'Container registry user'
+        type: string
+        required: true
       send_mail_notification:
         description: 'Whether to notify about the new build over email'
         type: boolean
@@ -58,6 +71,9 @@ on:
         type: string
         required: true
     secrets:
+      container_registry_token:
+        description: 'Token to pull container images'
+        required: true
       mail_username:
         description: 'SMTP username for mail notifications'
         required: false
@@ -73,6 +89,12 @@ on:
       SIGNING_KEY_PASSWORD:
         description: 'Signing Key Store key password'
         required: true
+      MINIO_ACCESS_KEY:
+        description: 'Minio S3 storage access key'
+        required: false
+      MINIO_SECRET_KEY:
+        description: 'Minio S3 storage secret key'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -137,6 +159,43 @@ jobs:
 
     ### Post-build actions
 
+    - name: Log into container registry
+      if: inputs.send_mail_notification == true
+      uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+      with:
+        registry: ${{ inputs.container_registry }}
+        username: ${{ inputs.container_registry_user }}
+        password: ${{ secrets.container_registry_token }}
+
+    - name: Unpack apk
+      id: apk_name
+      if: inputs.send_mail_notification == true
+      run: |
+        ls ./app/build/outputs/bundle/*/*.aab
+        mv ./app/build/outputs/bundle/*/*.aab .
+        APK_NAME=$(ls *.aab|head -1)
+        docker run -v "$(pwd):/app" ${BUNDLETOOL_IMAGE,,} build-apks --mode=universal --bundle=/app/${APK_NAME} --output=/app/app.apks
+        mv app.apks app.zip
+        unzip app.zip
+        mv universal.apk ${GOOGLE_PACKAGE_NAME}.apk
+        zip ${GOOGLE_PACKAGE_NAME}.${GITHUB_RUN_ID}.zip ${GOOGLE_PACKAGE_NAME}.apk
+      env:
+        BUNDLETOOL_IMAGE: ${{ inputs.bundletool_image }}
+        GOOGLE_PACKAGE_NAME: ${{ inputs.GOOGLE_PACKAGE_NAME }}
+
+    - name: Upload apk to s3
+      id: minio_upload
+      uses: TBE-Entertainment/github-workflows/.github/actions/minio-action@main
+      with:
+        minio_url: https://s3-infra.pulsemusic.com
+        minio_bucket: ci-artifacts-storage
+        minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
+        minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+        upload_file: true
+        upload_file_path: ${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.zip
+        upload_file_s3_path: pulsemusic-android/${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.zip
+        generate_shared_url: true
+
     - name: Send email notification of the new build
       uses: dawidd6/action-send-mail@v3
       if: inputs.send_mail_notification == true
@@ -156,4 +215,9 @@ jobs:
         # Required sender full name (address can be skipped):
         from: GitHub CI # <user@example.com>
         # Optional plain body:
-        body: New version of ${{ inputs.GOOGLE_PACKAGE_NAME }} application is available at ${{ inputs.GOOGLE_PACKAGE_TRACK }} track, check it out!
+        body: |
+          New version of ${{ inputs.GOOGLE_PACKAGE_NAME }} application is available, check it out! 
+
+          Download link: 
+
+          ${{ steps.minio_upload.outputs.download_url }}
