@@ -62,7 +62,7 @@ runs:
     - name: Upload file to minio
       if: inputs.upload_file == 'true'   # treat booleans as strings because of bug: https://github.com/actions/runner/issues/1483
       shell: bash
-      run: docker run -v "$(pwd):/tmp" minio/mc --config-dir /tmp cp /tmp/${{ inputs.upload_file_path }} github/${{ inputs.minio_bucket }}/${{ inputs.upload_file_s3_path }}
+      run: docker run -v "$(pwd):/tmp" minio/mc --config-dir /tmp mv /tmp/${{ inputs.upload_file_path }} github/${{ inputs.minio_bucket }}/${{ inputs.upload_file_s3_path }}
 
     - name: Share a file from minio
       id: shared_url
