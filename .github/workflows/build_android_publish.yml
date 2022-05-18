@@ -177,8 +177,7 @@ jobs:
         docker run -v "$(pwd):/app" ${BUNDLETOOL_IMAGE,,} build-apks --mode=universal --bundle=/app/${APK_NAME} --output=/app/app.apks
         mv app.apks app.zip
         unzip app.zip
-        mv universal.apk ${GOOGLE_PACKAGE_NAME}.apk
-        zip ${GOOGLE_PACKAGE_NAME}.${GITHUB_RUN_ID}.zip ${GOOGLE_PACKAGE_NAME}.apk
+        mv universal.apk ${GOOGLE_PACKAGE_NAME}.${GITHUB_RUN_ID}.apk
       env:
         BUNDLETOOL_IMAGE: ${{ inputs.bundletool_image }}
         GOOGLE_PACKAGE_NAME: ${{ inputs.GOOGLE_PACKAGE_NAME }}
@@ -192,8 +191,8 @@ jobs:
         minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
         minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
         upload_file: true
-        upload_file_path: ${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.zip
-        upload_file_s3_path: pulsemusic-android/${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.zip
+        upload_file_path: ${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.apk
+        upload_file_s3_path: pulsemusic-android/${{ inputs.GOOGLE_PACKAGE_NAME }}.${{ github.run_id }}.apk
         generate_shared_url: true
 
     - name: Send email notification of the new build
