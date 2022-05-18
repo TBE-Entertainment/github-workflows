@@ -176,13 +176,24 @@ jobs:
         ls ./app/build/outputs/bundle/*/*.aab
         mv ./app/build/outputs/bundle/*/*.aab .
         APK_NAME=$(ls *.aab|head -1)
-        docker run -v "$(pwd):/app" ${BUNDLETOOL_IMAGE,,} build-apks --mode=universal --bundle=/app/${APK_NAME} --output=/app/app.apks
+        docker run -v "$(pwd):/app" ${BUNDLETOOL_IMAGE,,} build-apks \
+          --mode=universal \
+          --bundle=/app/${APK_NAME} \
+          --output=/app/app.apks \
+          --ks=/app/${SIGNING_KEYSTORE} \
+          --ks-pass=pass:${SIGNING_STORE_PASSWORD} \
+          --ks-key-alias=${SIGNING_KEY_ALIAS} \
+          --key-pass=pass:${SIGNING_KEY_PASSWORD}
         mv app.apks app.zip
         unzip app.zip
         mv universal.apk ${GOOGLE_PACKAGE_NAME}.${GITHUB_RUN_ID}.apk
       env:
         BUNDLETOOL_IMAGE: ${{ inputs.bundletool_image }}
         GOOGLE_PACKAGE_NAME: ${{ inputs.GOOGLE_PACKAGE_NAME }}
+        SIGNING_KEYSTORE: 'SigningKey'
+        SIGNING_KEY_ALIAS: ${{ inputs.SIGNING_KEY_ALIAS }}
+        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
     - name: Upload apk to s3
       id: minio_upload
