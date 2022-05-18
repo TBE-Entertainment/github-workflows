@@ -131,11 +131,13 @@ jobs:
         bundle env
         bundle install
 
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle', '**/*.gradle.kts') }}
+    ### Step disabled due to GitHub issue: https://github.com/actions/runner/issues/449
+    #
+    # - name: Cache Gradle dependencies
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ~/.gradle/caches
+    #     key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle', '**/*.gradle.kts') }}
 
     - name: Setup Google credentials
       run: echo ${GOOGLE_CREDENTIALS} | base64 -d > /tmp/google-sa.json
