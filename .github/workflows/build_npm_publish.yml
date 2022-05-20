@@ -25,10 +25,6 @@ on:
         type: string
         required: false
         default: '.env.example'
-    secrets:
-      slack_webhook_url:
-        description: 'Slack webhook URL for notifications'
-        required: true
     outputs:
       app_version:
         description: "The generated version from the build"
@@ -238,9 +234,3 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-    - name: Send Slack notification for build failure
-      if: failure()
-      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
-      with:
-        slack_webhook_url: ${{ secrets.slack_webhook_url }}
