@@ -33,6 +33,9 @@ on:
       token:
         description: 'GitHub token with write privileges to make git commits'
         required: true
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: true
 
 env:
   REGISTRY: ghcr.io
@@ -99,3 +102,9 @@ jobs:
           KUBECONFIG: /tmp/kubeconfig
           APP_NAME: ${{ inputs.app_name }}
           FLUX_KS: ${{ inputs.flux_ks }}
+
+      - name: Send Slack notification for build failure
+        if: failure()
+        uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+        with:
+          slack_webhook_url: ${{ secrets.slack_webhook_url }}
