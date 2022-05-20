@@ -43,6 +43,9 @@ on:
       IOS_DIST_SIGNING_KEY_PASSWORD:
         description: 'App Store distribution key password'
         required: true
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -123,3 +126,9 @@ jobs:
     #      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
     #      ASC_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
     #      KEYCHAIN_PATH: ~/Library/Keychains/signing_temp.keychain-db
+
+    - name: Send Slack notification for build failure
+      if: failure()
+      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+      with:
+        slack_webhook_url: ${{ secrets.slack_webhook_url }}
