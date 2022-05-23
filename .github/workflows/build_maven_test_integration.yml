@@ -36,6 +36,7 @@ jobs:
         env:
           MINIO_ROOT_USER: pulsemusic
           MINIO_ROOT_PASSWORD: pulsemusic
+          MINIO_DEFAULT_BUCKETS: dev-playlist-artwork
         options: --name minio-server
 
     steps:
