@@ -99,3 +99,9 @@ jobs:
           KUBECONFIG: /tmp/kubeconfig
           APP_NAME: ${{ inputs.app_name }}
           FLUX_KS: ${{ inputs.flux_ks }}
+
+      - name: Send Slack notification for build failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}

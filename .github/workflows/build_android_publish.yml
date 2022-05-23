@@ -95,6 +95,9 @@ on:
       MINIO_SECRET_KEY:
         description: 'Minio S3 storage secret key'
         required: false
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -233,3 +236,9 @@ jobs:
           Download link: 
 
           ${{ steps.minio_upload.outputs.download_url }}
+
+    - name: Send Slack notification for build failure
+      if: failure() && env.SLACK_WEBHOOK_URL != ''
+      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
