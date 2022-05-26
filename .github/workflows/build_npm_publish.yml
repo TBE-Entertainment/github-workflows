@@ -25,6 +25,10 @@ on:
         type: string
         required: false
         default: '.env.example'
+    secrets:
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
     outputs:
       app_version:
         description: "The generated version from the build"

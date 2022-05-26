@@ -43,6 +43,10 @@ on:
       IOS_DIST_SIGNING_KEY_PASSWORD:
         description: 'App Store distribution key password'
         required: true
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

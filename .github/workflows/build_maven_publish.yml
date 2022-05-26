@@ -25,6 +25,10 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
     outputs:
       app_version:
         description: "The generated version from the build"

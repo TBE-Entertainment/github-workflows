@@ -33,6 +33,10 @@ on:
       token:
         description: 'GitHub token with write privileges to make git commits'
         required: true
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
+
 
 env:
   REGISTRY: ghcr.io
