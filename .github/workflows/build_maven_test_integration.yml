@@ -10,6 +10,10 @@ on:
         type: string
         required: false
         default: '11'
+    secrets:
+      slack_webhook_url:
+        description: 'Slack webhook URL for notifications'
+        required: false
 
 jobs:
   build:
@@ -51,3 +55,9 @@ jobs:
       
     - name: Run integration tests
       run: mvn -B clean install -Pintegration
+
+    - name: Send Slack notification for build failure
+      if: failure() && env.SLACK_WEBHOOK_URL != ''
+      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
