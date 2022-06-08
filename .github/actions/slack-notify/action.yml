@@ -12,14 +12,33 @@ runs:
       with:
         payload: |
           {
-            "text": "GitHub Action build result: ${{ job.status }}",
             "blocks": [
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Build for *${{ github.event.repository.name }}* result: *${{ job.status }}*\n\n*<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|Github Action Log>*\n\nCommit <${{ github.event.head_commit.url }}|*${{ github.event.head_commit.id }}*>\n\nCommit author: <${{ github.event.sender.html_url }}|*${{ github.event.sender.login }}*>"
+                  "text": "Build for *${{ github.event.repository.name }}* result: *${{ job.status }}*"
                 }
+              },
+              {
+                "type": "divider"
+              },
+              {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|*Github Action Log*>"
+                },
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Commit <${{ github.event.head_commit.url }}|*${{ github.event.head_commit.id }}*>"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "Commit author: <${{ github.event.sender.html_url }}|*${{ github.event.sender.login }}*>"
+                  }
+                ]
               }
             ]
           }
@@ -34,14 +53,33 @@ runs:
       with:
         payload: |
           {
-            "text": "GitHub Action build result: ${{ job.status }}",
             "blocks": [
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Build for *${{ github.event.repository.name }}* result: *${{ job.status }}*\n\n*<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|Github Action Log>*\n\nPull Request <${{ github.event.pull_request.html_url }}|*#${{ github.event.pull_request.number }}*>\n\nPR author: <${{ github.event.sender.html_url }}|*${{ github.event.sender.login }}*>"
+                  "text": "PR checks for *${{ github.event.repository.name }}* result: *${{ job.status }}*"
                 }
+              },
+              {
+                "type": "divider"
+              },
+              {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|*Github Action Log*>"
+                },
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "Pull Request <${{ github.event.pull_request.html_url }}|*#${{ github.event.pull_request.number }}*>"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "PR author: <${{ github.event.sender.html_url }}|*${{ github.event.sender.login }}*>"
+                  },          
+                ]
               }
             ]
           }
