@@ -154,7 +154,7 @@ jobs:
       if: github.event_name != 'pull_request'
       run: |
         cat > Dockerfile <<'EOF'
-        FROM tomcat:9.0-jre11-openjdk-slim-bullseye
+        FROM ghcr.io/tbe-entertainment/pulsemusic-devops/tomcat:0.1
 
         ARG WAIT_TIMEOUT
         ARG PORT
