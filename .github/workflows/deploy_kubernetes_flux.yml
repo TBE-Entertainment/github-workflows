@@ -94,7 +94,6 @@ jobs:
         run: |
           echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
           kubectl config view
-          kubectl get pods
           flux reconcile source git flux-system
           flux reconcile ks ${FLUX_KS}
           kubectl rollout status deployment ${APP_NAME}
