@@ -78,7 +78,7 @@ runs:
                   {
                     "type": "mrkdwn",
                     "text": "PR author: <${{ github.event.sender.html_url }}|*${{ github.event.sender.login }}*>"
-                  },          
+                  }
                 ]
               }
             ]
