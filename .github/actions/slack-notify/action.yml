@@ -5,6 +5,22 @@ description: "Send Slack notification from Github, use SLACK_WEBHOOK_URL env var
 runs:
   using: "composite"
   steps:
+    - name: Shorten the commit hash
+      id: commit_sha
+      shell: bash
+      run: |
+        if [ "${COMMIT_SHA}" != "" ]
+        then
+          COMMIT_SHA_SHORT=${COMMIT_SHA:0:8}
+        else
+          echo "Error: No commit sha available"
+          exit 1
+        fi
+        echo "Shortened commit sha is ${COMMIT_SHA_SHORT}"
+        echo ::set-output name=commit_sha_short::${COMMIT_SHA_SHORT}  
+      env:
+        COMMIT_SHA: ${{ github.event.head_commit.id }}
+
     - name: Send build failure alert to Slack
       if: github.event_name == 'push'
       id: slack_push
@@ -32,7 +48,7 @@ runs:
                 "fields": [
                   {
                     "type": "mrkdwn",
-                    "text": "Commit <${{ github.event.head_commit.url }}|*${{ github.event.head_commit.id }}*>"
+                    "text": "Commit <${{ github.event.head_commit.url }}|*${{ steps.commit_sha.outputs.commit_sha_short }}*>"
                   },
                   {
                     "type": "mrkdwn",
