@@ -212,40 +212,12 @@ jobs:
 
     ### Publish actions
 
-    # Login against a Docker registry except on PR
-    # https://github.com/docker/login-action
-    - name: Log into registry ${{ env.REGISTRY }}
+    - name: Build and push container image
       if: github.event_name != 'pull_request'
-      uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+      uses: TBE-Entertainment/github-workflows/.github/actions/docker-build-and-push@main
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    # Extract metadata (tags, labels) for Docker
-    # https://github.com/docker/metadata-action
-    - name: Extract Docker metadata
-      if: github.event_name != 'pull_request'
-      id: meta
-      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-      with:
-        images: ${{ env.REGISTRY }}/${{ github.repository }}
-        tags: |
-          ${{ steps.version.outputs.image_tag }}
-          type=ref,event=branch
-          type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-
-    # Build and push Docker image with Buildx (don't push on PR)
-    # https://github.com/docker/build-push-action
-    - name: Build and push Docker image
-      if: github.event_name != 'pull_request'
-      id: build-and-push
-      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
-      with:
-        context: ${{ inputs.project_subdirectory || '.' }} 
-        push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        container_tags: ${{ steps.version.outputs.image_tag }}
+        token: ${{ secrets.TOKEN_RW }}
 
     - name: Send Slack notification for build failure
       if: failure() && env.SLACK_WEBHOOK_URL != ''
