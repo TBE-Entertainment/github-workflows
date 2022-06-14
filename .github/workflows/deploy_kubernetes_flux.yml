@@ -26,17 +26,10 @@ on:
         description: 'Flux repository for cluster management'
         required: true
         type: string
-    secrets:
-      b64kubeconfig:
-        description: 'Kubeconfig file to access Kubernetes cluster in Base64 format'
+      environment:
+        description: 'The environment to deploy to'
         required: true
-      token:
-        description: 'GitHub token with write privileges to make git commits'
-        required: true
-      slack_webhook_url:
-        description: 'Slack webhook URL for notifications'
-        required: false
-
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -56,7 +49,7 @@ jobs:
         with:
           ref: main
           repository: ${{ github.repository_owner }}/${{ inputs.flux_repo }}
-          token: ${{ secrets.token }}
+          token: ${{ secrets.TOKEN_RW }}
 
       - name: Update application version
         run: | 
@@ -90,6 +83,14 @@ jobs:
           APP_KS_PATH: ${{ inputs.app_ks_path }}
           APP_NAME: ${{ inputs.app_name }}
 
+      - name: Set target environment secret name
+        id: env_secret
+        run: |
+          SECRET_NAME="K8S_${ENV}_KUBECONFIG_B64"
+          echo "::set-output name=kubeconfig_secret_name::${SECRET_NAME}"
+        env:
+          ENV: ${{ inputs.environment }}
+
       - name: Check deployment status in Kubernetes
         run: |
           echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
@@ -98,7 +99,7 @@ jobs:
           flux reconcile ks ${FLUX_KS}
           kubectl rollout status deployment ${APP_NAME}
         env:
-          B64_KUBECONFIG: ${{ secrets.b64kubeconfig }}
+          B64_KUBECONFIG: ${{ secrets[steps.env_secret.outputs.kubeconfig_secret_name] }}
           KUBECONFIG: /tmp/kubeconfig
           APP_NAME: ${{ inputs.app_name }}
           FLUX_KS: ${{ inputs.flux_ks }}
@@ -107,4 +108,4 @@ jobs:
         if: failure() && env.SLACK_WEBHOOK_URL != ''
         uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
