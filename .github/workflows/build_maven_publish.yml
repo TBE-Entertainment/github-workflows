@@ -24,7 +24,7 @@ on:
         description: 'Whether to use root context in Tomcat docker image'
         type: boolean
         required: false
-        default: false
+        default: true
       tomcat_image:
         description: 'Tomcat base image to use'
         type: string
