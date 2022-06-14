@@ -5,17 +5,15 @@ name: Run Jave code scans and code style checks
 on:
   workflow_call:
     inputs:
-      repo:
-        description: 'Repo to checkout'
+      java_version:
+        description: 'Version of JDK to run builds on'
         type: string
-        required: true
+        required: false
+        default: '11'
     secrets:
       slack_webhook_url:
         description: 'Slack webhook URL for notifications'
         required: false
-      TOKEN_RW:
-        description: 'Github token'
-        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -32,27 +30,20 @@ jobs:
       packages: write
 
     steps:
-      
-    - name: Check slack secrets
-      run: |
-        echo "URL from ORG secrets: ${SLACK_URL}"
-        echo "URL from input secrets: ${SLACK_INPUT_URL}"
-      env:
-        SLACK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        SLACK_INPUT_URL: ${{ secrets.slack_webhook_url }}
+    - uses: actions/checkout@v3
 
-    - name: Check deployment status in Kubernetes
-      run: |
-        echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
-        kubectl config view
-        kubectl get pods
-      env:
-        B64_KUBECONFIG: ${{ secrets.K8S_DEV_KUBECONFIG_B64 }}
-        KUBECONFIG: /tmp/kubeconfig
-
-    - name: Checkout Flux repo
-      uses: actions/checkout@master
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
       with:
-        ref: main
-        repository: ${{ github.repository_owner }}/${{ inputs.repo }}
-        token: ${{ secrets.TOKEN_RW }}
+        java-version: ${{ inputs.java_version }}
+        distribution: 'temurin'
+        cache: maven
+      
+    - name: Run code style check with Maven
+      run: mvn -B clean install -Pstyle
+    
+    - name: Send Slack notification for build failure
+      if: failure() && env.SLACK_WEBHOOK_URL != ''
+      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
