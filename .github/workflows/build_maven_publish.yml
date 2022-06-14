@@ -25,10 +25,6 @@ on:
         type: boolean
         required: false
         default: false
-    secrets:
-      slack_webhook_url:
-        description: 'Slack webhook URL for notifications'
-        required: false
     outputs:
       app_version:
         description: "The generated version from the build"
@@ -255,4 +251,4 @@ jobs:
       if: failure() && env.SLACK_WEBHOOK_URL != ''
       uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
