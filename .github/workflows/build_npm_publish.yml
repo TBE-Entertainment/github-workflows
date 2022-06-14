@@ -25,6 +25,12 @@ on:
         type: string
         required: false
         default: '.env.example'
+      nginx_image:
+        description: 'Nginx base image to use'
+        type: string
+        required: false
+        default: nginx:1.21-alpine
+      ghcr_user:
     outputs:
       app_version:
         description: "The generated version from the build"
@@ -168,9 +174,10 @@ jobs:
     - name: Create Dockerfile
       if: github.event_name != 'pull_request'
       run: |
-        cat > Dockerfile <<'EOF'
-        FROM nginx:1.21-alpine
-
+        cat > Dockerfile <<EOF
+        FROM ${NGINX_IMAGE}
+        EOF
+        cat >> Dockerfile <<'EOF'
         RUN addgroup -g 1000 www-group && adduser -S -D -g "" -G www-group -u 1000 www-user && \
             chown -hR 1000:1000 /usr/share/nginx/html /var/cache/nginx /etc/nginx && \
             touch /var/run/nginx.pid && chown 1000:1000 /var/run/nginx.pid
@@ -182,6 +189,8 @@ jobs:
 
         USER 1000
         EOF
+      env:
+        NGINX_IMAGE: ${{ inputs.nginx_image }}
 
     ### Build actions
 

@@ -25,6 +25,11 @@ on:
         type: boolean
         required: false
         default: false
+      tomcat_image:
+        description: 'Tomcat base image to use'
+        type: string
+        required: false
+        default: 'tomcat:9.0-jre11-openjdk-slim-bullseye'
     outputs:
       app_version:
         description: "The generated version from the build"
@@ -153,9 +158,11 @@ jobs:
     - name: Create Dockerfile
       if: github.event_name != 'pull_request'
       run: |
-        cat > Dockerfile <<'EOF'
-        FROM ghcr.io/tbe-entertainment/pulsemusic-devops/tomcat:0.1
+        cat > Dockerfile <<EOF
+        FROM ${TOMCAT_IMAGE}
+        EOF
 
+        cat >> Dockerfile <<'EOF'
         ARG WAIT_TIMEOUT
         ARG PORT
 
@@ -191,6 +198,7 @@ jobs:
         EOF
       env:
         TOMCAT_ROOT_CTX: ${{ inputs.tomcat_root_context }}
+        TOMCAT_IMAGE: ${{ inputs.tomcat_image }}
 
     ### Build actions
 
