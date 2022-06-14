@@ -30,7 +30,6 @@ on:
         type: string
         required: false
         default: nginx:1.21-alpine
-      ghcr_user:
     outputs:
       app_version:
         description: "The generated version from the build"

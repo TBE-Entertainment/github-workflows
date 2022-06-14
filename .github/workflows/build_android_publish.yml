@@ -150,7 +150,7 @@ jobs:
       uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
       with:
         registry: ${{ inputs.container_registry }}
-        username: ${{ inputs.container_registry_user }}
+        username: ${{ secrets.GHCR_USER }}
         password: ${{ secrets.TOKEN_IMAGE_PULL }}
 
     - name: Unpack apk
