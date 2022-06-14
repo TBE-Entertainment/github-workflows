@@ -14,10 +14,6 @@ on:
         description: 'Application version to be deployed'
         required: true
         type: string
-      app_ks_path:
-        description: 'Path to kustomization file where deployment image version is to be updated'
-        required: true
-        type: string
       flux_ks:
         description: 'Flux kustomization deployment belongs to'
         required: true
@@ -26,8 +22,8 @@ on:
         description: 'Flux repository for cluster management'
         required: true
         type: string
-      environment:
-        description: 'The environment to deploy to'
+      namespace:
+        description: 'The namespace to deploy to'
         required: true
         type: string
 
@@ -54,7 +50,7 @@ jobs:
       - name: Update application version
         run: | 
           yq --version
-          export APP_NAMESPACE=$(basename $(dirname ${APP_KS_PATH}))
+          export APP_KS_PATH=kubernetes/${FLUX_KS}/${NAMESPACE}/kustomization.yaml
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
           # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
@@ -74,33 +70,44 @@ jobs:
           git status
           git blame ${APP_KS_PATH}
           git add ${APP_KS_PATH}
-          git commit -m "Update $APP_NAME to version $APP_VERSION at $APP_NAMESPACE namespace"
+          git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace"
           git status
           git push origin main
         env:
           IMAGE_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
           APP_VERSION: ${{ inputs.app_version }}
-          APP_KS_PATH: ${{ inputs.app_ks_path }}
           APP_NAME: ${{ inputs.app_name }}
-
-      - name: Set target environment secret name
-        id: env_secret
-        run: |
-          SECRET_NAME="K8S_${ENV}_KUBECONFIG_B64"
-          echo "::set-output name=kubeconfig_secret_name::${SECRET_NAME}"
-        env:
-          ENV: ${{ inputs.environment }}
+          NAMESPACE: ${{ inputs.namespace }}
+          FLUX_KS: ${{ inputs.flux_ks }}
 
       - name: Check deployment status in Kubernetes
         run: |
           echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
-          kubectl config view
-          flux reconcile source git flux-system
-          flux reconcile ks ${FLUX_KS}
+          
+          if kubectl config view
+          then
+            echo 'Successfully connected to the target cluster.'
+          else
+            echo 'Failed to connect to the target cluster.'
+            exit 1
+          fi
+
+          if kubectl get ns ${NAMESPACE} >/dev/null 2>&1
+          then
+            kubectl config set-context --current --namespace=${NAMESPACE}
+            kubectl get pods
+          else
+            echo "Namespace ${NAMESPACE} does not exist!"
+            exit 1
+          fi
+
+          flux reconcile ks ${FLUX_KS} --with-source
+
           kubectl rollout status deployment ${APP_NAME}
         env:
-          B64_KUBECONFIG: ${{ secrets[steps.env_secret.outputs.kubeconfig_secret_name] }}
+          B64_KUBECONFIG: ${{ secrets.K8S_KUBECONFIG_B64 }}
           KUBECONFIG: /tmp/kubeconfig
+          NAMESPACE: ${{ inputs.namespace }}
           APP_NAME: ${{ inputs.app_name }}
           FLUX_KS: ${{ inputs.flux_ks }}
 
