@@ -19,11 +19,11 @@ on:
         description: 'The subdirectory relative to repository root where project is located'
         type: string
         required: false
-      ASC_TARGET_NAME:
+      asc_target_name:
         description: 'App Store Connect Target name (App name)'
         type: string
         required: true
-      ASC_TEAM_ID:
+      asc_team_id:
         description: 'App Store Connect Team ID'
         type: string
         required: true
@@ -95,9 +95,8 @@ jobs:
         ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-        ASC_TARGET_NAME: ${{ inputs.ASC_TARGET_NAME }}
-        ASC_TEAM_ID: ${{ inputs.ASC_TEAM_ID }}
-        ASC_BUILD_NUMBER: ${{ inputs.ASC_BUILD_NUMBER }}
+        ASC_TARGET_NAME: ${{ inputs.asc_target_name }}
+        ASC_TEAM_ID: ${{ inputs.asc_team_id }}
         KEYCHAIN_PATH: ~/Library/Keychains/signing_temp.keychain-db
 
     #  - name: Build & upload iOS binary
