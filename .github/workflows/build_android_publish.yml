@@ -50,6 +50,15 @@ on:
         description: 'SMTP server port'
         type: string
         required: false
+      minio_url:
+        description: 'Target MinIO storage URL for built artifacts'
+        type: string
+        required: true
+      minio_bucket:
+        description: 'Target MinIO bucket'
+        type: string
+        required: false
+        default: 'ci-artifacts-storage'
       gradle_build_tasks:
         description: 'Space separated list of Gradle tasks to execute upon build'
         type: string
@@ -174,13 +183,13 @@ jobs:
       id: minio_upload
       uses: TBE-Entertainment/github-workflows/.github/actions/minio-action@main
       with:
-        minio_url: https://s3-infra.pulsemusic.com
-        minio_bucket: ci-artifacts-storage
+        minio_url: ${{ inputs.minio_url }}
+        minio_bucket: ${{ inputs.minio_bucket }}
         minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
         minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
         upload_file: true
         upload_file_path: ${{ inputs.google_package_name }}.${{ github.run_id }}.apk
-        upload_file_s3_path: pulsemusic-android/${{ inputs.google_package_name }}.${{ github.run_id }}.apk
+        upload_file_s3_path: ${{ github.event.repository.name }}/${{ inputs.google_package_name }}.${{ github.run_id }}.apk
         generate_shared_url: true
 
     - name: Send email notification of the new build
