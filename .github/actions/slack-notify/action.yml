@@ -6,6 +6,7 @@ runs:
   using: "composite"
   steps:
     - name: Shorten the commit hash
+      if: github.event_name == 'push'
       id: commit_sha
       shell: bash
       run: |
