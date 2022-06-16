@@ -28,10 +28,6 @@ on:
         type: string
         required: false
         default: 'ghcr.io'
-      container_registry_user:
-        description: 'Container registry user'
-        type: string
-        required: true
       send_mail_notification:
         description: 'Whether to notify about the new build over email'
         type: boolean
