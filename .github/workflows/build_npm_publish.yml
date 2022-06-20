@@ -11,6 +11,11 @@ on:
         type: string
         required: false
         default: '14'
+      node_package_manager:
+        description: 'Indicate which package manager to use: npm or yarn'
+        type: string
+        required: false
+        default: 'npm'
       gitversion_image_version:
         description: 'Version of GitVersion docker image to use'
         type: string
@@ -190,17 +195,27 @@ jobs:
 
     ### Build actions
 
-    - name: Set up NPM
+    - name: Set up Node.JS
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.node_version }}
-        cache: npm
+        cache: ${{ inputs.node_package_manager }}
 
     - name: Restore dependencies
+      if: inputs.node_package_manager == 'npm'
       run: npm ci
 
+    - name: Restore dependencies
+      if: inputs.node_package_manager == 'yarn'
+      run: yarn install --immutable --immutable-cache --check-cache
+
     - name: Build the application
+      if: inputs.node_package_manager == 'npm'
       run: npm run build
+
+    - name: Build the application
+      if: inputs.node_package_manager == 'yarn'
+      run: yarn build
 
     - name: Check the built files
       run: find build/
