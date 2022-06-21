@@ -137,6 +137,12 @@ jobs:
                       maxConnections="1000000"
                       connectionTimeout="10000"
                       redirectPort="8443" />
+              <Connector port="8081"
+                      protocol="org.apache.coyote.http11.Http11NioProtocol"
+                      maxThreads="10000"
+                      maxConnections="1000000"
+                      connectionTimeout="10000"
+                      redirectPort="9443" />
               <Engine name="Catalina" defaultHost="localhost">
               <Realm className="org.apache.catalina.realm.LockOutRealm"><Realm className="org.apache.catalina.realm.UserDatabaseRealm"
                       resourceName="UserDatabase"/>
