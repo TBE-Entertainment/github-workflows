@@ -48,6 +48,7 @@ jobs:
           token: ${{ secrets.TOKEN_RW }}
 
       - name: Update application version
+        id: commit_version
         run: | 
           yq --version
           export APP_KS_PATH=kubernetes/${FLUX_KS}/${NAMESPACE}/kustomization.yaml
@@ -72,7 +73,9 @@ jobs:
           git add ${APP_KS_PATH}
           git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace"
           git status
-          git push origin main
+          git push origin main && SHA=$(git rev-parse HEAD)
+
+          echo ::set-output name=commit_sha::${SHA}
         env:
           IMAGE_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
           APP_VERSION: ${{ inputs.app_version }}
@@ -81,6 +84,7 @@ jobs:
           FLUX_KS: ${{ inputs.flux_ks }}
 
       - name: Check deployment status in Kubernetes
+        id: deploy_status_check
         run: |
           echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
           
@@ -116,3 +120,17 @@ jobs:
         uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Revert the changes if reconciliation fails
+        if: always() && steps.deploy_status_check.outcome != 'success'
+        run: |
+          # Revert the git commit
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          git status
+          git revert ${GIT_COMMIT} --no-edit
+          git status
+          git push origin main 
+        env:
+          GIT_COMMIT: ${{ steps.commit_version.outputs.commit_sha }}
+
