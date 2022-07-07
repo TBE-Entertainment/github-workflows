@@ -48,6 +48,15 @@ jobs:
         java-version: ${{ inputs.java_version }}
         distribution: 'temurin'
         cache: maven
+
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: |
+          [{
+              "id": "github",
+              "username": "${{ secrets.GH_USER }}",
+              "password": "${{ secrets.TOKEN_RO }}"
+          }]
       
     - name: Run integration tests
       run: mvn -B clean install -Pintegration
