@@ -11,6 +11,11 @@ on:
         type: string
         required: false
         default: '11'
+      version_source:
+        description: 'Obtain version from this origin, supported values: "pom" | "gitversion"'
+        type: string
+        required: false
+        default: 'pom'
       gitversion_image_version:
         description: 'Version of GitVersion docker image to use'
         type: string
@@ -55,9 +60,16 @@ jobs:
 
     ### Versioning
 
+    - name: Get version from pom.xml
+      if: github.event_name != 'pull_request' && inputs.version_source == 'pom'
+      id: version_pom
+      run: | 
+        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo ::set-output name=version::${VERSION}
+
     - name: Generate version
-      if: github.event_name != 'pull_request'
-      id: version
+      if: github.event_name != 'pull_request' && inputs.version_source == 'gitversion'
+      id: version_gitversion
       working-directory: '.'
       run: |
         set -euo pipefail
@@ -84,19 +96,35 @@ jobs:
         
         if [ "${GITHUB_REF}" = 'refs/heads/main' ]
         then
-          echo ::set-output name=image_tag::${VERSION_SHORT}
+          echo ::set-output name=version::${VERSION_SHORT}
         else
-          echo ::set-output name=image_tag::${VERSION_LONG}
+          echo ::set-output name=version::${VERSION_LONG}
         fi
       env:
         GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
-        
+
+    - name: Pick the final version
+      id: version
+      run: |
+        if [ "${VERSION_SOURCE}" = 'gitversion' ]
+        then
+          VERSION=${VERSION_GITVERSION}
+        else 
+          VERSION=${VERSION_POM}
+        fi
+        echo ::set-output name=version::${VERSION}
+        echo "Version: ${VERSION}"
+      env:
+        VERSION_SOURCE: ${{ inputs.version_source }}
+        VERSION_GITVERSION: ${{ steps.version_gitversion.outputs.version }}
+        VERSION_POM: ${{ steps.version_pom.outputs.version }}
+          
     - name: Add tag to repository
       if: github.event_name != 'pull_request' && contains('refs/heads/main', github.ref)
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.0
       with:
-        custom_tag: ${{ steps.version.outputs.image_tag }}
+        custom_tag: ${{ steps.version.outputs.version }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
     ### Publish actions
@@ -109,8 +137,11 @@ jobs:
         cache: maven
 
     - name: Publish to GitHub Packages
-      run: mvn --batch-mode deploy
+      run: |
+        mvn versions:set -DnewVersion=${VERSION}
+        mvn --batch-mode deploy
       env:
+        VERSION: ${{ steps.version.outputs.version }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Send Slack notification for build failure
