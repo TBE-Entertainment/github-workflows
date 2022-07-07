@@ -197,14 +197,23 @@ jobs:
         TOMCAT_ROOT_CTX: ${{ inputs.tomcat_root_context }}
         TOMCAT_IMAGE: ${{ inputs.tomcat_image }}
 
-    ### Build actions
-
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
         java-version: ${{ inputs.java_version }}
         distribution: 'temurin'
         cache: maven
+
+    - uses: s4u/maven-settings-action@v2.6.0
+      with:
+        servers: |
+          [{
+              "id": "github",
+              "username": "${{ secrets.GH_USER }}",
+              "password": "${{ secrets.TOKEN_RO }}"
+          }]
+
+    ### Build actions
 
     - name: Package with Maven
       run: mvn -B clean package
