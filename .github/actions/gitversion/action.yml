@@ -1,0 +1,56 @@
+name: "GitVersion"
+
+description: "Invoke GitVersion as a Semantic Versioning tool"
+
+inputs:
+  gitversion_image_version:
+    required: false
+    description: 'Version of GitVersion docker image to use'
+    default: '5.10.1-alpine.3.14-6.0'
+  project_subdirectory:
+    required: false
+    description: "The subdirectory to run the build from relative to the repository root"
+    default: '.'
+
+outputs:
+  version:
+    description: "Download URL of the shared file"
+    value: ${{ steps.version.outputs.generated_version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate version
+      id: version
+      working-directory: '{{ inputs.project_subdirectory }}'
+      run: |
+        set -euo pipefail
+
+        echo "Branch is ${GITHUB_REF_NAME}"
+
+        ### This is specific to using GitVersion with GitHub 
+        ### 'develop' and 'main' branches if they exist need to be checked out explicitly prior to GitVersion run
+        git checkout develop || true
+        git checkout main || true
+        git checkout ${GITHUB_REF_NAME}
+
+        docker run --rm -v "$(pwd):/repo" gittools/gitversion:${GITVERSION_IMAGE_VERSION} \
+          /nocache \
+          /nonormalize \
+          /verbosity Verbose \
+          /overrideconfig assembly-versioning-format='{Major}.{Minor}.{Patch}-{PreReleaseLabel}${ShortSha}' \
+          /targetpath /repo | tee /tmp/version 
+
+        VERSION_LONG=$(jq -r '.AssemblySemVer' /tmp/version)
+        VERSION_SHORT=$(jq -r '.MajorMinorPatch' /tmp/version)
+        echo "Long Version is ${VERSION_LONG}"
+        echo "Short Version is ${VERSION_SHORT}"
+        
+        if [ "${GITHUB_REF}" = 'refs/heads/main' ]
+        then
+          echo ::set-output name=generated_version::${VERSION_SHORT}
+        else
+          echo ::set-output name=generated_version::${VERSION_LONG}
+        fi
+      env:
+        GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
