@@ -51,9 +51,15 @@ jobs:
         id: commit_version
         run: | 
           yq --version
-          export APP_KS_PATH=kubernetes/${FLUX_KS}/${NAMESPACE}/kustomization.yaml
+
+          # TODO: rework this piece when passed parameters are switch to include cluster and env
+          export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
+          export ENV=$(echo $NAMESPACE | cut -d- -f2)
+          export APP_KS_PATH=kubernetes/${FLUX_KS}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
+
           # convert IMAGE_REPO to lowercase manually, no native support inside github expressions
           # ref: https://github.com/github/feedback/discussions/10553
           export IMAGE_REPO_LOWER=${IMAGE_REPO,,}
@@ -105,7 +111,7 @@ jobs:
             exit 1
           fi
 
-          flux reconcile ks ${FLUX_KS} --with-source
+          flux reconcile ks ${NAMESPACE} --with-source
 
           kubectl rollout status deployment ${APP_NAME}
         env:
@@ -133,4 +139,3 @@ jobs:
           git push origin main 
         env:
           GIT_COMMIT: ${{ steps.commit_version.outputs.commit_sha }}
-
