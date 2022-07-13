@@ -53,9 +53,10 @@ jobs:
           yq --version
 
           # TODO: rework this piece when passed parameters are switch to include cluster and env
+          export CLUSTER="pm-001"
           export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
           export ENV=$(echo $NAMESPACE | cut -d- -f2)
-          export APP_KS_PATH=kubernetes/${FLUX_KS}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+          export APP_KS_PATH=kubernetes/clusters/${CLUSTER}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
 
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
