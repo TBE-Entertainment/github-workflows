@@ -14,17 +14,21 @@ on:
         description: 'Application version to be deployed'
         required: true
         type: string
-      flux_ks:
+      flux_ks:   # TODO: remove when all calling deployments are ready
         description: 'Flux kustomization deployment belongs to'
-        required: true
+        required: false
         type: string
       flux_repo:
         description: 'Flux repository for cluster management'
         required: true
         type: string
       namespace:
-        description: 'The namespace to deploy to'
+        description: 'The namespace to deploy to, expected format: <app_group>-<environment>'
         required: true
+        type: string
+      cluster:
+        description: 'The cluster to deploy to'
+        required: false   # TODO: change to true when all calling deployments are ready
         type: string
 
 env:
@@ -52,11 +56,11 @@ jobs:
         run: | 
           yq --version
 
-          # TODO: rework this piece when passed parameters are switch to include cluster and env
-          export CLUSTER="pm-001"
+          # namespace should be named as <APP_GROUP>-<ENV>, e.g myapp-dev
           export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
           export ENV=$(echo $NAMESPACE | cut -d- -f2)
-          export APP_KS_PATH=kubernetes/clusters/${CLUSTER}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+          # TODO: remove default cluster name when all deployments are ready
+          export APP_KS_PATH=kubernetes/clusters/${CLUSTER-pm-001}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
 
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
@@ -88,7 +92,8 @@ jobs:
           APP_VERSION: ${{ inputs.app_version }}
           APP_NAME: ${{ inputs.app_name }}
           NAMESPACE: ${{ inputs.namespace }}
-          FLUX_KS: ${{ inputs.flux_ks }}
+          # TODO: remove default cluster name when all deployments are ready
+          CLUSTER: ${{ inputs.cluster || 'pm-001' }}
 
       - name: Check deployment status in Kubernetes
         id: deploy_status_check
