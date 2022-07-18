@@ -139,6 +139,7 @@ jobs:
           # Revert the git commit
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
+          git pull origin main
           git status
           git revert ${GIT_COMMIT} --no-edit
           git status
