@@ -21,6 +21,11 @@ on:
         type: string
         required: false
         default: '5.10.1-alpine.3.14-6.0'
+      release_branches:
+        description: 'Comma-separated list of branches that generate a tag'
+        type: string
+        required: false
+        default: 'develop'
       project_subdirectory:
         description: 'The subdirectory relative to repository root where project is located'
         type: string
@@ -120,11 +125,11 @@ jobs:
         VERSION_POM: ${{ steps.version_pom.outputs.version }}
           
     - name: Add tag to repository
-      if: github.event_name != 'pull_request' && contains('refs/heads/main', github.ref)
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.0
       with:
         custom_tag: ${{ steps.version.outputs.version }}
+        release_branches: ${{ inputs.release_branches }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
     ### Publish actions
