@@ -28,6 +28,10 @@ inputs:
   ghcr_token:
     required: false
     default: ${{ github.token }}
+  scan:
+    required: false
+    description: "Enable container image scan for vulnerabilities (Trivy)"
+    default: false
 
 runs:
   using: "composite"
@@ -51,9 +55,9 @@ runs:
       run: |
         if [ "${INPUT_NAME}" = "" ]
         then
-          IMAGE_NAME="${REPO_NAME}"
+          IMAGE_NAME="${REPO_NAME,,}"
         else
-          IMAGE_NAME="${REPO_NAME}/${INPUT_NAME}"
+          IMAGE_NAME="${REPO_NAME,,}/${INPUT_NAME,,}"
         fi
         echo "Setting image name to ${IMAGE_NAME}"
         echo ::set-output name=image_name::${IMAGE_NAME}  
@@ -81,7 +85,32 @@ runs:
       with:
         context: ${{ inputs.project_subdirectory }} 
         push: ${{ inputs.push }}
+        load: true   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    # We support passing multiple tags to the action, but image scan just needs one
+    - name: Get single image tag
+      if: inputs.scan == 'true'
+      id: image_tag
+      shell: bash
+      run: |
+        IMAGE_TAG=$(echo $TAGS|head -1|cut -d' ' -f1)
+        echo "Setting image tag to ${IMAGE_TAG}"
+        echo ::set-output name=image_tag::${IMAGE_TAG}  
+      env:
+        TAGS: ${{ inputs.container_tags }}
+
+    - name: Run Trivy vulnerability scanner
+      if: inputs.scan == 'true'
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ inputs.container_registry }}/${{ steps.image_name.outputs.image_name }}:${{ steps.image_tag.outputs.image_tag }}
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
+        security-checks: 'vuln'
