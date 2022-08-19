@@ -30,7 +30,7 @@ inputs:
     default: ${{ github.token }}
   scan:
     required: false
-    description: "Enable container image scan for vulnerabilities (Trivy)"
+    description: "Enable container image scan for vulnerabilities (Trivy), mutually exclusive with 'push'"
     default: false
 
 runs:
@@ -85,7 +85,7 @@ runs:
       with:
         context: ${{ inputs.project_subdirectory }} 
         push: ${{ inputs.push }}
-        load: true   # to keep docker image locally for image scan
+        load: ${{ inputs.scan }}   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
