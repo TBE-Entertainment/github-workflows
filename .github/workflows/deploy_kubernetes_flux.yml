@@ -58,7 +58,7 @@ jobs:
 
           # namespace should be named as <APP_GROUP>-<ENV>, e.g myapp-dev
           export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
-          export ENV=$(echo $NAMESPACE | cut -d- -f2)
+          export ENV=$(echo $NAMESPACE | cut -d- -f2-)
           # TODO: remove default cluster name when all deployments are ready
           export APP_KS_PATH=kubernetes/clusters/${CLUSTER-pm-001}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
 
