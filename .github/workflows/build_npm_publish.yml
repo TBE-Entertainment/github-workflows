@@ -60,7 +60,7 @@ jobs:
       packages: write
 
     outputs:
-      app_version: ${{ steps.version.outputs.image_tag }}
+      app_version: ${{ format('{0}@{1}', steps.version.outputs.image_tag, steps.build_push_image.outputs.digest) }}
 
     # Set working directory for all steps at once
     defaults:
@@ -228,6 +228,7 @@ jobs:
     ### Publish actions
 
     - name: Build and push container image
+      id: build_push_image
       if: github.event_name != 'pull_request'
       uses: TBE-Entertainment/github-workflows/.github/actions/docker-build-and-push@main
       with:

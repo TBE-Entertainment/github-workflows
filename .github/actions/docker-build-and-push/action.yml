@@ -33,6 +33,11 @@ inputs:
     description: "Enable container image scan for vulnerabilities (Trivy), mutually exclusive with 'push'"
     default: false
 
+outputs:
+  digest: 
+    description: "Built container image digest"
+    value: ${{ steps.build-and-push.outputs.digest }}
+
 runs:
   using: "composite"
   steps:
