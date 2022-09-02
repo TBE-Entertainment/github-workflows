@@ -30,13 +30,13 @@ inputs:
     default: ${{ github.token }}
   scan:
     required: false
-    description: "Enable container image scan for vulnerabilities (Trivy), mutually exclusive with 'push'"
+    description: "Enable container image scan for vulnerabilities (Trivy)"
     default: false
 
 outputs:
   digest: 
     description: "Built container image digest"
-    value: ${{ steps.build-and-push.outputs.digest }}
+    value: ${{ steps.build_image.outputs.digest }}
 
 runs:
   using: "composite"
@@ -82,14 +82,13 @@ runs:
           type=ref,event=branch
           type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
 
-    # Build and push Docker image with Buildx (don't push on PR)
+    # Build Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
     - name: Build and push Docker image
-      id: build-and-push
+      id: build_image
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.project_subdirectory }} 
-        push: ${{ inputs.push }}
         load: ${{ inputs.scan }}   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -117,5 +116,16 @@ runs:
         exit-code: '1'
         ignore-unfixed: true
         vuln-type: 'os,library'
-        severity: 'CRITICAL,HIGH'
+        severity: 'CRITICAL'
         security-checks: 'vuln'
+
+    # Push docker image to the registry
+    # https://github.com/docker/build-push-action
+    - name: Push Docker image
+      id: push_image
+      if: inputs.push == 'true'
+      uses: docker/build-push-action@v3
+      with:
+        context: ${{ inputs.project_subdirectory }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
