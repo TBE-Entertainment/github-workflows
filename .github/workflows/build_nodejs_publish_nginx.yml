@@ -201,10 +201,20 @@ jobs:
     ### Build actions
 
     - name: Set up Node.JS
+      if: inputs.node_package_manager == 'npm'
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.node_version }}
         cache: ${{ inputs.node_package_manager }}
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Set up Node.JS
+      if: inputs.node_package_manager == 'yarn'
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: ${{ inputs.node_package_manager }}
+        cache-dependency-path: '**/yarn.lock'
 
     - name: Restore dependencies
       if: inputs.node_package_manager == 'npm'
