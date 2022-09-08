@@ -1,0 +1,202 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Build package with Maven and publish as container image to GitHub Packages
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        description: 'Version of node.js to run builds on'
+        type: string
+        required: false
+        default: '10'
+      node_package_manager:
+        description: 'Indicate which package manager to use: npm or yarn'
+        type: string
+        required: false
+        default: 'npm'
+      gitversion_image_version:
+        description: 'Version of GitVersion docker image to use'
+        type: string
+        required: false
+        default: '5.10.1-alpine.3.14-6.0'
+      release_branches:
+        description: 'Comma-separated list of branches that generate a tag'
+        type: string
+        required: false
+        default: 'main'
+      project_subdirectory:
+        description: 'The subdirectory relative to repository root where project is located'
+        type: string
+        required: false
+      node_image:
+        description: 'NodeJS base image to use'
+        type: string
+        required: false
+        default: node:10-alpine
+      build:
+        description: 'A flag that indicates if it is required to build the project'
+        type: string
+        required: false
+        default: false
+    outputs:
+      app_version:
+        description: "The generated version from the build"
+        value: ${{ jobs.build.outputs.app_version }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+      packages: write
+
+    outputs:
+      app_version: ${{ format('{0}@{1}', steps.version.outputs.image_tag, steps.build_push_image.outputs.digest) }}
+
+    # Set working directory for all steps at once
+    defaults:
+      run:
+        working-directory: ${{ inputs.project_subdirectory || '.' }} 
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}   # requirement of GitVersion
+        fetch-depth: 0   # requirement of GitVersion
+
+    ### Versioning
+
+    - name: Generate version
+      if: github.event_name != 'pull_request'
+      id: version
+      working-directory: '.'
+      run: |
+        set -euo pipefail
+
+        echo "Branch is ${GITHUB_REF_NAME}"
+
+        ### This is specific to using GitVersion with GitHub 
+        ### 'develop' and 'main' branches if they exist need to be checked out explicitly prior to GitVersion run
+        git checkout develop || true
+        git checkout main || true
+        git checkout ${GITHUB_REF_NAME}
+
+        docker run --rm -v "$(pwd):/repo" gittools/gitversion:${GITVERSION_IMAGE_VERSION} \
+          /nocache \
+          /nonormalize \
+          /verbosity Verbose \
+          /overrideconfig assembly-versioning-format='{Major}.{Minor}.{Patch}-{PreReleaseLabel}${ShortSha}' \
+          /targetpath /repo | tee /tmp/version 
+
+        VERSION_LONG=$(jq -r '.AssemblySemVer' /tmp/version)
+        VERSION_SHORT=$(jq -r '.MajorMinorPatch' /tmp/version)
+        echo "Long Version is ${VERSION_LONG}"
+        echo "Short Version is ${VERSION_SHORT}"
+        
+        if [ "${GITHUB_REF}" = 'refs/heads/main' ]
+        then
+          echo ::set-output name=image_tag::${VERSION_SHORT}
+          echo "Using ${VERSION_SHORT} version for the built artifacts"
+        else
+          echo ::set-output name=image_tag::${VERSION_LONG}
+          echo "Using ${VERSION_LONG} version for the built artifacts"
+        fi
+      env:
+        GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
+
+    - name: Add tag to repository
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
+        custom_tag: ${{ steps.version.outputs.image_tag }}
+        release_branches: ${{ inputs.release_branches }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    
+    ### Pre-build actions 
+
+    # Use generic Dockerfile for all builds
+    - name: Create Dockerfile
+      if: github.event_name != 'pull_request'
+      run: |
+        cat > Dockerfile <<EOF
+        FROM ${NODE_IMAGE}
+        EOF
+        cat >> Dockerfile <<'EOF'
+        WORKDIR /app
+        COPY --chown=1000:root . .
+
+        USER 1000
+        EXPOSE 3000
+
+        ENV NODE_ENV=production
+
+        ENTRYPOINT ["npm", "start"]
+
+        EOF
+      env:
+        NODE_IMAGE: ${{ inputs.node_image }}
+
+    ### Build actions
+
+    - name: Set up Node.JS
+      if: inputs.node_package_manager == 'npm'
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: ${{ inputs.node_package_manager }}
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Set up Node.JS
+      if: inputs.node_package_manager == 'yarn'
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node_version }}
+        cache: ${{ inputs.node_package_manager }}
+        cache-dependency-path: '**/yarn.lock'
+
+    - name: Restore dependencies
+      if: inputs.node_package_manager == 'npm'
+      run: npm ci
+
+    - name: Restore dependencies
+      if: inputs.node_package_manager == 'yarn'
+      run: yarn install --immutable --immutable-cache --check-cache
+
+    - name: Build the application
+      if: inputs.node_package_manager == 'npm' && inputs.build == 'true'
+      run: npm run build
+
+    - name: Build the application
+      if: inputs.node_package_manager == 'yarn' && inputs.build == 'true'
+      run: yarn build
+
+    - name: Check the built files
+      if: inputs.build == 'true'
+      run: find build/
+
+    ### Publish actions
+
+    - name: Build and push container image
+      id: build_push_image
+      if: github.event_name != 'pull_request'
+      uses: TBE-Entertainment/github-workflows/.github/actions/docker-build-and-push@main
+      with:
+        container_tags: ${{ steps.version.outputs.image_tag }}
+        project_subdirectory: ${{ inputs.project_subdirectory }}
+        ghcr_user: ${{ secrets.GHCR_USER }}
+        ghcr_token: ${{ secrets.TOKEN_RW }}
+
+    - name: Send Slack notification for build failure
+      if: failure() && env.SLACK_WEBHOOK_URL != ''
+      uses: TBE-Entertainment/github-workflows/.github/actions/slack-notify@main
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
