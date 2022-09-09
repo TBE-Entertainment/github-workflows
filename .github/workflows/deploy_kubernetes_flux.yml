@@ -97,6 +97,7 @@ jobs:
 
       - name: Check deployment status in Kubernetes
         id: deploy_status_check
+        timeout-minutes: 5
         run: |
           echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
           
