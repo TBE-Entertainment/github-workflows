@@ -147,9 +147,10 @@ jobs:
                       resourceName="UserDatabase"/>
               </Realm>
               <Host name="localhost"  appBase="webapps"
-                    unpackWARs="true" autoDeploy="true"><Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
-                      prefix="localhost_access_log" suffix=".txt"
-                      pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+                    unpackWARs="true" autoDeploy="true">
+                <Valve className="org.apache.catalina.valves.AccessLogValve" 
+                            directory="/dev" prefix="stdout" suffix="" pattern="%h %l %u %t &quot;%r&quot; %s %b" 
+                            buffered="false" fileDateFormat=""/>
               </Host>
             </Engine>
           </Service>
