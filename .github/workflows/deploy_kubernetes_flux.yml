@@ -72,7 +72,9 @@ jobs:
           echo "New app version is ${APP_VERSION}"
           echo 'Before changes:'
           yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
-          yq -i '(.images[] | select(.name == env(IMAGE_REPO_LOWER))).newTag = env(APP_VERSION)' ${APP_KS_PATH}
+          # set the image version with single quotes: 
+          # https://mikefarah.gitbook.io/yq/operators/style#update-and-set-style-of-a-particular-node-using-path-variables
+          yq -i 'with((.images[] | select(.name == env(IMAGE_REPO_LOWER))).newTag ; . = env(APP_VERSION) | . style="single")' ${APP_KS_PATH}
           echo 'After changes:'
           yq '.images[] | select(.name == env(IMAGE_REPO_LOWER))' ${APP_KS_PATH}
 
