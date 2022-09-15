@@ -31,7 +31,7 @@ on:
         description: 'NodeJS base image to use'
         type: string
         required: false
-        default: node:10-alpine
+        default: node:16-alpine
       build:
         description: 'A flag that indicates if it is required to build the project'
         type: string
