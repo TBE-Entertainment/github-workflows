@@ -32,6 +32,10 @@ inputs:
     required: false
     description: "Enable container image scan for vulnerabilities (Trivy)"
     default: false
+  test:
+    required: false
+    description: "Run container image build tests (Terratest), expects 'docker_test.go' to be located next to Dockerfile"
+    default: false
 
 outputs:
   digest: 
@@ -118,6 +122,28 @@ runs:
         vuln-type: 'os,library'
         severity: 'CRITICAL'
         security-checks: 'vuln'
+
+    # Run tests for the built image
+
+    - name: Set up Go
+      if: inputs.test == 'true'
+      uses: actions/setup-go@v3
+      with:
+        go-version-file: ${{ inputs.project_subdirectory }}/go.mod
+        cache: true
+        cache-dependency-path: ${{ inputs.project_subdirectory }}/go.sum
+
+    - name: Get single image tag
+      if: inputs.test == 'true'
+      shell: bash
+      run: |
+        cd ${WORKDIR}
+        go version
+        go mod init test && go mod tidy
+        go test -v
+      env:
+        WORKDIR: ${{ inputs.project_subdirectory }}
+        IMAGE_TAG: ${{ inputs.container_registry }}/${{ steps.image_name.outputs.image_name }}:${{ steps.image_tag.outputs.image_tag }}
 
     # Push docker image to the registry
     # https://github.com/docker/build-push-action
