@@ -84,11 +84,12 @@ jobs:
           git status
           git blame ${APP_KS_PATH}
           git add ${APP_KS_PATH}
-          git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace"
+          git commit -m "Update $APP_NAME to version $APP_VERSION at $NAMESPACE namespace" && \
+            SHA=$(git rev-parse HEAD) && \
+            echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
           git status
-          git push origin main && SHA=$(git rev-parse HEAD)
+          git push origin main
 
-          echo ::set-output name=commit_sha::${SHA}
         env:
           IMAGE_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
           APP_VERSION: ${{ inputs.app_version }}
