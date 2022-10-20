@@ -116,47 +116,6 @@ jobs:
 
     ### Pre-build actions
 
-    # Use generic tomcat server.xml for all builds
-    - name: Create tomcat server.xml
-      if: github.event_name != 'pull_request'
-      run: |
-        cat > server.xml <<'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <Server port="8005" shutdown="SHUTDOWN">
-          <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
-          <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
-          <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
-          <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
-          <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
-          <GlobalNamingResources>
-          <Resource name="UserDatabase" auth="Container"
-                      type="org.apache.catalina.UserDatabase"
-                      description="User database that can be updated and saved"
-                      factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
-                      pathname="conf/tomcat-users.xml" />
-          </GlobalNamingResources>
-          <Service name="Catalina">
-              <Connector port="8080"
-                      protocol="org.apache.coyote.http11.Http11NioProtocol"
-                      maxThreads="10000"
-                      maxConnections="1000000"
-                      connectionTimeout="10000"
-                      redirectPort="8443" />
-              <Engine name="Catalina" defaultHost="localhost">
-              <Realm className="org.apache.catalina.realm.LockOutRealm"><Realm className="org.apache.catalina.realm.UserDatabaseRealm"
-                      resourceName="UserDatabase"/>
-              </Realm>
-              <Host name="localhost"  appBase="webapps"
-                    unpackWARs="true" autoDeploy="true">
-                <Valve className="org.apache.catalina.valves.AccessLogValve" 
-                            directory="/dev" prefix="stdout" suffix="" pattern="%h %l %u %t &quot;%r&quot; %s %b" 
-                            buffered="false" fileDateFormat=""/>
-              </Host>
-            </Engine>
-          </Service>
-        </Server>
-        EOF
-
     # Use generic Dockerfile for all builds
     - name: Create Dockerfile
       if: github.event_name != 'pull_request'
@@ -174,8 +133,6 @@ jobs:
 
         RUN addgroup --gid 1000 www-group && adduser --system --disabled-password --gecos "" --gid 1000 --uid 1000 www-user
         RUN chown -hR 1000:1000 ${CATALINA_HOME}
-
-        COPY --chown=1000:root server.xml ${CATALINA_HOME}/conf/server.xml
 
         EXPOSE ${PORT}
         EOF
