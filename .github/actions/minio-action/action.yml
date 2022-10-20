@@ -71,7 +71,7 @@ runs:
       run: |
         SHARED_URL=$(docker run -v "$(pwd):/tmp" minio/mc --config-dir /tmp share download github/${{ inputs.minio_bucket }}/${{ inputs.upload_file_s3_path }} --json | jq '.share')
         echo "Shared URL is ${SHARED_URL}"
-        echo ::set-output name=shared_url::${SHARED_URL}
+        echo "shared_url=${SHARED_URL}" >> $GITHUB_OUTPUT
 
     - name: Download file from minio
       if: inputs.download_file == 'true'   # treat booleans as strings because of bug: https://github.com/actions/runner/issues/1483

@@ -69,7 +69,7 @@ runs:
           IMAGE_NAME="${REPO_NAME,,}/${INPUT_NAME,,}"
         fi
         echo "Setting image name to ${IMAGE_NAME}"
-        echo ::set-output name=image_name::${IMAGE_NAME}  
+        echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
       env:
         REPO_NAME: ${{ github.repository }}
         INPUT_NAME: ${{ inputs.container_image_name }}
@@ -107,7 +107,7 @@ runs:
       run: |
         IMAGE_TAG=$(echo $TAGS|head -1|cut -d' ' -f1)
         echo "Setting image tag to ${IMAGE_TAG}"
-        echo ::set-output name=image_tag::${IMAGE_TAG}  
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
       env:
         TAGS: ${{ inputs.container_tags }}
 
