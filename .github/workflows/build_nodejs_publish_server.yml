@@ -101,10 +101,10 @@ jobs:
         
         if [ "${GITHUB_REF}" = 'refs/heads/main' ]
         then
-          echo ::set-output name=image_tag::${VERSION_SHORT}
+          echo "image_tag=${VERSION_SHORT}" >> $GITHUB_OUTPUT
           echo "Using ${VERSION_SHORT} version for the built artifacts"
         else
-          echo ::set-output name=image_tag::${VERSION_LONG}
+          echo "image_tag=${VERSION_LONG}" >> $GITHUB_OUTPUT
           echo "Using ${VERSION_LONG} version for the built artifacts"
         fi
       env:

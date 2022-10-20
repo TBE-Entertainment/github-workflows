@@ -70,7 +70,7 @@ jobs:
       id: version_pom
       run: | 
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-        echo ::set-output name=version::${VERSION}
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
     - name: Generate version
       if: github.event_name != 'pull_request' && inputs.version_source == 'gitversion'
@@ -101,9 +101,11 @@ jobs:
         
         if [ "${GITHUB_REF}" = 'refs/heads/main' ]
         then
-          echo ::set-output name=version::${VERSION_SHORT}
+          echo "image_tag=${VERSION_SHORT}" >> $GITHUB_OUTPUT
+          echo "Using ${VERSION_SHORT} version for the built artifacts"
         else
-          echo ::set-output name=version::${VERSION_LONG}
+          echo "image_tag=${VERSION_LONG}" >> $GITHUB_OUTPUT
+          echo "Using ${VERSION_LONG} version for the built artifacts"
         fi
       env:
         GITVERSION_IMAGE_VERSION: ${{ inputs.gitversion_image_version }}
@@ -117,7 +119,7 @@ jobs:
         else 
           VERSION=${VERSION_POM}
         fi
-        echo ::set-output name=version::${VERSION}
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "Version: ${VERSION}"
       env:
         VERSION_SOURCE: ${{ inputs.version_source }}
