@@ -55,7 +55,7 @@ jobs:
           # namespace should be named as <APP_GROUP>-<ENV>, e.g myapp-dev
           export APP_GROUP=$(echo $NAMESPACE | cut -d- -f1)
           export ENV=$(echo $NAMESPACE | cut -d- -f2-)
-          export APP_KS_PATH=kubernetes/clusters/${CLUSTER}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
+          export APP_KS_PATH=kubernetes/clusters/${CLUSTER-pm-001}/apps/${APP_GROUP}/${ENV}/kustomization.yaml
 
           echo 'Working with kustomization file:'
           ls ${APP_KS_PATH}
