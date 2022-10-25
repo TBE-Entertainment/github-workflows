@@ -18,9 +18,9 @@ on:
         description: 'Flux kustomization deployment belongs to'
         required: false
         type: string
-      flux_repo:
+      flux_repo:   # TODO: remove when all calling deployments are ready
         description: 'Flux repository for cluster management'
-        required: true
+        required: false
         type: string
       namespace:
         description: 'The namespace to deploy to, expected format: <app_group>-<environment>'
@@ -28,6 +28,10 @@ on:
         type: string
       cluster:
         description: 'The cluster to deploy to'
+        required: false   # TODO: change to true when all calling deployments are ready
+        type: string
+      cluster_repo:
+        description: 'The cluster repo with application manifests'
         required: false   # TODO: change to true when all calling deployments are ready
         type: string
 
@@ -48,7 +52,7 @@ jobs:
         uses: actions/checkout@master
         with:
           ref: main
-          repository: ${{ github.repository_owner }}/${{ inputs.flux_repo }}
+          repository: ${{ github.repository_owner }}/${{ inputs.flux_repo || inputs.cluster_repo }}   # TODO: leave only cluster_repo
           token: ${{ secrets.TOKEN_RW }}
 
       - name: Update application version
@@ -129,7 +133,7 @@ jobs:
           KUBECONFIG: /tmp/kubeconfig
           NAMESPACE: ${{ inputs.namespace }}
           APP_NAME: ${{ inputs.app_name }}
-          FLUX_KS: ${{ inputs.flux_ks }}
+          FLUX_KS: ${{ inputs.flux_ks }}   # TODO: remove when all calling deployments are ready
 
       - name: Send Slack notification for build failure
         if: failure() && env.SLACK_WEBHOOK_URL != ''
