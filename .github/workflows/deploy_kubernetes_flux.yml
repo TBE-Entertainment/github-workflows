@@ -52,6 +52,32 @@ jobs:
           repository: ${{ github.repository_owner }}/${{ inputs.flux_repo || inputs.cluster_repo }}   # TODO: leave only cluster_repo
           token: ${{ secrets.TOKEN_RW }}
 
+      - name: Configure Kubernetes cluster access
+        timeout-minutes: 1
+        run: |
+          echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
+          
+          if kubectl config view
+          then
+            echo 'Successfully connected to the target cluster.'
+          else
+            echo 'Failed to connect to the target cluster.'
+            exit 1
+          fi
+
+          if kubectl get ns ${NAMESPACE} >/dev/null 2>&1
+          then
+            kubectl config set-context --current --namespace=${NAMESPACE}
+            kubectl get pods
+          else
+            echo "Namespace ${NAMESPACE} does not exist!"
+            exit 1
+          fi
+        env:
+          B64_KUBECONFIG: ${{ secrets.K8S_KUBECONFIG_B64 }}
+          KUBECONFIG: /tmp/kubeconfig
+          NAMESPACE: ${{ inputs.namespace }}
+
       - name: Update application version
         id: commit_version
         run: | 
@@ -103,34 +129,12 @@ jobs:
         id: deploy_status_check
         timeout-minutes: 5
         run: |
-          echo ${B64_KUBECONFIG} | base64 -d > ${KUBECONFIG}
-          
-          if kubectl config view
-          then
-            echo 'Successfully connected to the target cluster.'
-          else
-            echo 'Failed to connect to the target cluster.'
-            exit 1
-          fi
-
-          if kubectl get ns ${NAMESPACE} >/dev/null 2>&1
-          then
-            kubectl config set-context --current --namespace=${NAMESPACE}
-            kubectl get pods
-          else
-            echo "Namespace ${NAMESPACE} does not exist!"
-            exit 1
-          fi
-
           flux reconcile ks ${NAMESPACE} --with-source
-
           kubectl rollout status deployment ${APP_NAME}
         env:
-          B64_KUBECONFIG: ${{ secrets.K8S_KUBECONFIG_B64 }}
           KUBECONFIG: /tmp/kubeconfig
           NAMESPACE: ${{ inputs.namespace }}
           APP_NAME: ${{ inputs.app_name }}
-          FLUX_KS: ${{ inputs.flux_ks }}   # TODO: remove when all calling deployments are ready
 
       - name: Send Slack notification for build failure
         if: failure() && env.SLACK_WEBHOOK_URL != ''
