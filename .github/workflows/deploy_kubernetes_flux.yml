@@ -1,4 +1,4 @@
-# This workflow will deploy a container image from Github Packages container registry
+# This workflow will deploy a container image from container registry
 # to a Kubernetes cluster by means of Flux GitOps toolkit
 
 name: Deploy to Kubernetes (Flux)
@@ -34,9 +34,6 @@ on:
         description: 'The cluster repo with application manifests'
         required: false   # TODO: change to true when all calling deployments are ready
         type: string
-
-env:
-  REGISTRY: ghcr.io
 
 jobs:
   deploy:
@@ -95,7 +92,7 @@ jobs:
           git push origin main
 
         env:
-          IMAGE_REPO: ${{ env.REGISTRY }}/${{ github.repository }}
+          IMAGE_REPO: ${{ secrets.CONTAINER_REGISTRY }}/${{ github.repository }}
           APP_VERSION: ${{ inputs.app_version }}
           APP_NAME: ${{ inputs.app_name }}
           NAMESPACE: ${{ inputs.namespace }}
