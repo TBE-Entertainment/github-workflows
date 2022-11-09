@@ -1,0 +1,64 @@
+name: "Teleport Login"
+
+description: "Login to Teleport and fetch github credentials for one-off access"
+
+inputs:
+  teleport_version:
+    required: false
+    description: "Teleport version to use"
+    default: '11.0.1'
+  teleport_auth_server:
+    required: true
+    description: "Teleport Authentication Server URL"
+  teleport_app:
+    required: false
+    description: "Teleport application name to access"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Teleport
+      uses: gravitational/teleport-actions/setup@main
+      with:
+        version: ${{ inputs.teleport_version }}
+
+    - name: Write tbot config
+      shell: bash
+      run: |
+        cat > tbot.yaml << EOF
+        auth_server: ${AUTH_SERVER}
+        oneshot: true
+        storage:
+          directory: /opt/machine-id-data
+        destinations:
+          - directory: /opt/machine-id
+            app: ${APP}
+        EOF
+      env:
+        AUTH_SERVER: ${{ inputs.teleport_auth_server }}
+        APP: ${{ inputs.teleport_app }}
+
+    - name: Fetch credentials
+      shell: bash
+      run: >
+        tbot start
+        -c tbot.yaml
+        --join-method=github
+        --token=github-token
+
+    - name: Check files
+      shell: bash
+      run: |
+        find /opt/machine-id
+        find /opt/machine-id-data
+
+    - name: Write curlrc
+      shell: bash
+      run: |
+        cat ~/.curlrc || true
+        cat > ~/.curlrc << 'EOF'
+        --verbose
+        --cert /opt/machine-id/tlscert
+        --key /opt/machine-id/key
+        EOF
+        cat ~/.curlrc || true
