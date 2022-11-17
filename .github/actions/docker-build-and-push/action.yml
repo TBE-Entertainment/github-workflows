@@ -36,6 +36,10 @@ inputs:
     required: false
     description: "Run container image build tests (Terratest), expects 'docker_test.go' to be located next to Dockerfile"
     default: false
+  sign:
+    required: false
+    description: "Sign container image with cosign keyless signature using Github ID token"
+    default: true
 
 outputs:
   digest: 
@@ -44,6 +48,7 @@ outputs:
 
 runs:
   using: "composite"
+
   steps:
     # Login against a Docker registry except on PR
     # https://github.com/docker/login-action
@@ -155,3 +160,17 @@ runs:
         context: ${{ inputs.project_subdirectory }}
         push: true
         tags: ${{ steps.meta.outputs.tags }}
+
+    # Sign the image
+
+    - name: Set up cosign
+      if: inputs.sign == 'true'
+      uses: sigstore/cosign-installer@v2
+    
+    - name: Sign the image
+      if: inputs.sign == 'true'
+      shell: bash
+      run: cosign sign ${TAGS}
+      env:
+        TAGS: ${{ steps.meta.outputs.tags }}
+        COSIGN_EXPERIMENTAL: 1
