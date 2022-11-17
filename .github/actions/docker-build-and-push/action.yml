@@ -138,7 +138,7 @@ runs:
         cache: true
         cache-dependency-path: ${{ inputs.project_subdirectory }}/go.sum
 
-    - name: Get single image tag
+    - name: Run tests for container image
       if: inputs.test == 'true'
       shell: bash
       run: |
