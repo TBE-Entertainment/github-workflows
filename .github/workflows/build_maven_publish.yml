@@ -53,6 +53,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
 
     outputs:
       app_version: ${{ format('{0}@{1}', steps.version.outputs.image_tag, steps.build_push_image.outputs.digest) }}
