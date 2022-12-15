@@ -46,6 +46,11 @@ on:
         description: 'SMTP server port'
         type: string
         required: false
+      upload_to_minio:
+        description: 'Upload generated artifact to MinIO storage'
+        type: boolean
+        required: false
+        default: true
       minio_url:
         description: 'Target MinIO storage URL for built artifacts'
         type: string
@@ -186,7 +191,7 @@ jobs:
         minio_bucket: ${{ inputs.minio_bucket }}
         minio_access_key: ${{ secrets.MINIO_ACCESS_KEY }}
         minio_secret_key: ${{ secrets.MINIO_SECRET_KEY }}
-        upload_file: true
+        upload_file: ${{ inputs.upload_to_minio }}
         upload_file_path: ${{ inputs.google_package_name }}.${{ github.run_id }}.apk
         upload_file_s3_path: ${{ github.event.repository.name }}/${{ inputs.google_package_name }}.${{ github.run_id }}.apk
         generate_shared_url: true
