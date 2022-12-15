@@ -131,6 +131,8 @@ jobs:
         lane: ${{ inputs.fastlane_lane }}
         subdirectory: ${{ inputs.project_subdirectory }}
       env:
+        GITHUB_ID: ${{ secrets.GH_USER }}
+        GITHUB_PACKAGES_TOKEN: ${{ secrets.TOKEN_RO }}
         GRADLE_BUILD_TASKS: ${{ inputs.gradle_build_tasks }}
         GOOGLE_PACKAGE_NAME: ${{ inputs.google_package_name }}
         GOOGLE_PACKAGE_TRACK: ${{ inputs.google_package_track }}
