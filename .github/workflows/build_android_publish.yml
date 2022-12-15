@@ -51,6 +51,11 @@ on:
         type: boolean
         required: false
         default: true
+      minio_generate_url:
+        description: 'Generate shared MinIO URL for the uploaded artifact'
+        type: boolean
+        required: false
+        default: true
       minio_url:
         description: 'Target MinIO storage URL for built artifacts'
         type: string
@@ -194,7 +199,7 @@ jobs:
         upload_file: ${{ inputs.upload_to_minio }}
         upload_file_path: ${{ inputs.google_package_name }}.${{ github.run_id }}.apk
         upload_file_s3_path: ${{ github.event.repository.name }}/${{ inputs.google_package_name }}.${{ github.run_id }}.apk
-        generate_shared_url: true
+        generate_shared_url: ${{ inputs.minio_generate_url }}
 
     - name: Send email notification of the new build
       uses: dawidd6/action-send-mail@v3
