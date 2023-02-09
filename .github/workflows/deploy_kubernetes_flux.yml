@@ -129,6 +129,7 @@ jobs:
         id: deploy_status_check
         timeout-minutes: 5
         run: |
+          flux reconcile ks operations --with-source
           flux reconcile ks ${NAMESPACE} --with-source
           kubectl rollout status deployment ${APP_NAME}
         env:
