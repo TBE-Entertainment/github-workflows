@@ -6,7 +6,7 @@ runs:
   using: "composite"
   steps:
     - name: Shorten the commit hash
-      if: github.event_name != 'pull_request'
+      if: github.event_name == 'push' 
       id: commit_sha
       shell: bash
       run: |
@@ -20,10 +20,10 @@ runs:
         echo "Shortened commit sha is ${COMMIT_SHA_SHORT}"
         echo "commit_sha_short=${COMMIT_SHA_SHORT}" >> $GITHUB_OUTPUT 
       env:
-        COMMIT_SHA: ${{ github.sha }}
+        COMMIT_SHA: ${{ github.event.head_commit.id }}
 
     - name: Send build failure alert to Slack
-      if: github.event_name != 'pull_request'
+      if: github.event_name == 'push'
       id: slack_push
       uses: slackapi/slack-github-action@v1.18.0
       with:
