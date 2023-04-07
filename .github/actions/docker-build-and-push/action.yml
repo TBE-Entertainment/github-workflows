@@ -189,7 +189,7 @@ runs:
       run: |
         echo Image is ${IMAGE}
         echo "${COSIGN_KEY}" | base64 -d > cosign.key
-        cat cosign.key
+        ls -la cosign.key
         cosign sign --key cosign.key --yes --verbose ${IMAGE}
       env:
         IMAGE: ${{ format('{0}/{1}@{2}', inputs.container_registry, steps.image_name.outputs.image_name, steps.push_image.outputs.digest) }}
