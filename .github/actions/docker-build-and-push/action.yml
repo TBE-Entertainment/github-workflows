@@ -189,6 +189,7 @@ runs:
       run: |
         echo Image is ${IMAGE}
         echo "${COSIGN_KEY}" | base64 -d > cosign.key
+        echo "Cosign password: ${COSIGN_PASSWORD}"
         ls -la cosign.key
         cosign sign --key cosign.key --yes --verbose ${IMAGE}
       env:
