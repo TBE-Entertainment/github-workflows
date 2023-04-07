@@ -38,8 +38,16 @@ inputs:
     default: false
   sign:
     required: false
-    description: "Sign container image with cosign keyless signature using Github ID token"
-    default: true
+    description: "Sign container image with cosign"
+    default: false
+  cosign_key:
+    required: false
+    description: "The key to sign images"
+    default: ""
+  cosign_key_password:
+    required: false
+    description: "The password for the key to sign images"
+    default: ""
 
 outputs:
   digest: 
@@ -180,7 +188,9 @@ runs:
       shell: bash
       run: |
         echo Image is ${IMAGE}
-        cosign sign ${IMAGE} --force
+        echo "${COSIGN_KEY}" | base64 -d > cosign.key
+        cosign sign --key cosign.key --yes ${IMAGE}
       env:
         IMAGE: ${{ format('{0}/{1}@{2}', inputs.container_registry, steps.image_name.outputs.image_name, steps.push_image.outputs.digest) }}
-        COSIGN_EXPERIMENTAL: 1
+        COSIGN_KEY: {{ inputs.cosign_key }}
+        COSIGN_KEY_PASSWORD: {{ inputs.cosign_key_password }}
