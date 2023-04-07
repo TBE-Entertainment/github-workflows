@@ -192,5 +192,5 @@ runs:
         cosign sign --key cosign.key --yes ${IMAGE}
       env:
         IMAGE: ${{ format('{0}/{1}@{2}', inputs.container_registry, steps.image_name.outputs.image_name, steps.push_image.outputs.digest) }}
-        COSIGN_KEY: {{ inputs.cosign_key }}
-        COSIGN_KEY_PASSWORD: {{ inputs.cosign_key_password }}
+        COSIGN_KEY: ${{ inputs.cosign_key }}
+        COSIGN_KEY_PASSWORD: ${{ inputs.cosign_key_password }}
