@@ -189,7 +189,7 @@ runs:
       run: |
         echo Image is ${IMAGE}
         echo "${COSIGN_KEY}" | base64 -d > cosign.key
-        cat -A cosign.key
+        ls -la cosign.key
         wget -q "https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64"
         mv ./cosign-linux-amd64 ./cosign && chmod +x ./cosign
         ./cosign sign --key cosign.key --yes --verbose ${IMAGE}
