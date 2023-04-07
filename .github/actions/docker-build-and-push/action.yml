@@ -177,9 +177,9 @@ runs:
 
     # Sign the image
 
-    - name: Set up cosign
-      if: inputs.sign == 'true'
-      uses: sigstore/cosign-installer@v3
+    # - name: Set up cosign
+    #   if: inputs.sign == 'true'
+    #   uses: sigstore/cosign-installer@v3
     
     # cosign recommends to use image digest for signing
     # --force argument is used to upload transactional log
@@ -190,7 +190,9 @@ runs:
         echo Image is ${IMAGE}
         echo "${COSIGN_KEY}" | base64 -d > cosign.key
         ls -la cosign.key
-        cosign sign --key cosign.key --yes --verbose ${IMAGE}
+        wget -q "https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64"
+        mv ./cosign-linux-amd64 ./cosign
+        ./cosign sign --key cosign.key --yes --verbose ${IMAGE}
       env:
         IMAGE: ${{ format('{0}/{1}@{2}', inputs.container_registry, steps.image_name.outputs.image_name, steps.push_image.outputs.digest) }}
         COSIGN_KEY: ${{ inputs.cosign_key }}
