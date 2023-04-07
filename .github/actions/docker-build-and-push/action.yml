@@ -179,7 +179,7 @@ runs:
 
     - name: Set up cosign
       if: inputs.sign == 'true'
-      uses: sigstore/cosign-installer@v2
+      uses: sigstore/cosign-installer@v3
     
     # cosign recommends to use image digest for signing
     # --force argument is used to upload transactional log
