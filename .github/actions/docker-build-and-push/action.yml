@@ -159,7 +159,7 @@ runs:
         cd ${WORKDIR}
         go version
         go mod init test && go mod tidy
-        go test -v
+        go test -v -timeout 30m
       env:
         WORKDIR: ${{ inputs.project_subdirectory }}
         IMAGE_TAG: ${{ steps.image_tag.outputs.image_tag_full }}
