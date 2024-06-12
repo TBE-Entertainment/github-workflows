@@ -14,6 +14,10 @@ inputs:
     required: false
     description: "The container tags to add to the built image"
     default: ${{ github.run_id }}
+  build_args:
+    required: false
+    description: "List of build arguments to pass"
+    default: ""
   push:
     required: false
     description: "True to push the image to the registry after building"
@@ -110,6 +114,7 @@ runs:
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.project_subdirectory }} 
+        build-args: ${{ inputs.build_args }}
         load: ${{ inputs.scan }}   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
