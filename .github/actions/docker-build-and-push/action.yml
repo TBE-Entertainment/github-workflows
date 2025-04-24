@@ -14,6 +14,10 @@ inputs:
     required: false
     description: "The container tags to add to the built image"
     default: ${{ github.run_id }}
+  platforms:
+    required: false
+    description: "Which platforms to build"
+    default: "linux/amd64"
   push:
     required: false
     description: "True to push the image to the registry after building"
@@ -115,6 +119,7 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        platforms: ${{ inputs.platforms }} 
 
     # We support passing multiple tags to the action, but image scan just needs one
     - name: Get single image tag
