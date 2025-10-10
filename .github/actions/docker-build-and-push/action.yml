@@ -110,6 +110,15 @@ runs:
 
     # Build Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
+    - name: Rebuild without cache (force refresh)
+      uses: docker/build-push-action@v3
+      with:
+        context: ./utils/jnlp
+        push: true
+        tags: ghcr.io/tbe-entertainment/pulsemusic-devops/jnlp:cache-refresh-1
+        cache-from: none
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64
     - name: Build and push Docker image
       id: build_image
       uses: docker/build-push-action@v3
@@ -121,15 +130,6 @@ runs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
         platforms: ${{ inputs.platforms }} 
-    - name: Rebuild without cache (force refresh)
-      uses: docker/build-push-action@v3
-      with:
-        context: ./utils/jnlp
-        push: true
-        tags: ghcr.io/tbe-entertainment/devops-tools/jnlp:cache-refresh-1
-        cache-from: none
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64
 
     # We support passing multiple tags to the action, but image scan just needs one
     - name: Get single image tag
