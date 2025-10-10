@@ -119,6 +119,7 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         # labels: ${{ steps.meta.outputs.labels }}
         cache-from: none
+        push: true
         cache-to: none
         platforms: ${{ inputs.platforms }} 
 
@@ -150,13 +151,13 @@ runs:
 
     # Run tests for the built image
 
-    - name: Set up Go
-      if: inputs.test == 'true'
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: ${{ inputs.project_subdirectory }}/go.mod
-        cache: true
-        cache-dependency-path: ${{ inputs.project_subdirectory }}/go.sum
+    # - name: Set up Go
+    #   if: inputs.test == 'true'
+    #   uses: actions/setup-go@v3
+    #   with:
+    #     go-version-file: ${{ inputs.project_subdirectory }}/go.mod
+    #     cache: true
+    #     cache-dependency-path: ${{ inputs.project_subdirectory }}/go.sum
 
     - name: Run tests for container image
       if: inputs.test == 'true'
