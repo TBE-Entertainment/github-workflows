@@ -122,7 +122,7 @@ runs:
         cache-to: none
         platforms: ${{ inputs.platforms }} 
 
-    # We support passing multiple tags to the action, but image scan just needs one
+    # We support passing multiple tags to the action, but image scan just needs one 
     - name: Get single image tag
       id: image_tag
       shell: bash
