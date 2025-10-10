@@ -1,205 +1,32 @@
-name: "Docker Build & Push"
+name: Reload Buildx Cache
 
-description: "Build and push a docker container image to container registry"
+on:
+  workflow_dispatch:   # manual trigger only
 
-inputs:
-  container_registry:
-    required: false
-    description: "The container registry URL"
-    default: 'ghcr.io'
-  container_image_name:
-    required: false
-    description: "Custom container image name - repository name is used by default"
-  container_tags:
-    required: false
-    description: "The container tags to add to the built image"
-    default: ${{ github.run_id }}
-  platforms:
-    required: false
-    description: "Which platforms to build"
-    default: "linux/amd64"
-  push:
-    required: false
-    description: "True to push the image to the registry after building"
-    default: true
-  project_subdirectory:
-    required: false
-    description: "The subdirectory to run the build from relative to the repository root"
-    default: '.'
-  ghcr_user:
-    required: false
-    default: ${{ github.actor }}
-  ghcr_token:
-    required: false
-    default: ${{ github.token }}
-  scan:
-    required: false
-    description: "Enable container image scan for vulnerabilities (Trivy)"
-    default: false
-  test:
-    required: false
-    description: "Run container image build tests (Terratest), expects 'docker_test.go' to be located next to Dockerfile"
-    default: false
-  sign:
-    required: false
-    description: "Sign container image with cosign"
-    default: false
-  cosign_key:
-    required: false
-    description: "The key to sign images"
-    default: ""
-  cosign_key_password:
-    required: false
-    description: "The password for the key to sign images"
-    default: ""
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
 
-outputs:
-  digest: 
-    description: "Built container image digest"
-    value: ${{ steps.push_image.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-runs:
-  using: "composite"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  steps:
-    # Login against a Docker registry except on PR
-    # https://github.com/docker/login-action
-    - name: Log into registry - ${{ inputs.container_registry }}
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ inputs.container_registry }}
-        username: ${{ inputs.ghcr_user }}
-        password: ${{ inputs.ghcr_token }}
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v3
-      with:
-        platforms: ${{ inputs.platforms }} 
-
-    - name: Set container image name
-      id: image_name
-      shell: bash
-      run: |
-        if [ "${INPUT_NAME}" = "" ]
-        then
-          IMAGE_NAME="${REPO_NAME,,}"
-        else
-          IMAGE_NAME="${REPO_NAME,,}/${INPUT_NAME,,}"
-        fi
-        echo "Setting image name to ${IMAGE_NAME}"
-        echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-      env:
-        REPO_NAME: ${{ github.repository }}
-        INPUT_NAME: ${{ inputs.container_image_name }}
-
-    # Extract metadata (tags, labels) for Docker
-    # https://github.com/docker/metadata-action
-    - name: Extract Docker metadata
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ${{ inputs.container_registry }}/${{ steps.image_name.outputs.image_name }}
-        tags: |
-          ${{ inputs.container_tags }}
-          type=ref,event=branch
-          type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-
-    # Build Docker image with Buildx (don't push on PR)
-    # https://github.com/docker/build-push-action
-    - name: Build and push Docker image
-      id: build_image
-      uses: docker/build-push-action@v3
-      with:
-        context: ${{ inputs.project_subdirectory }} 
-        # load: ${{ inputs.scan }}   # to keep docker image locally for image scan
-        tags: ${{ steps.meta.outputs.tags }}
-        # labels: ${{ steps.meta.outputs.labels }}
-        cache-from: none
-        push: true
-        cache-to: none
-        platforms: ${{ inputs.platforms }} 
-
-    # We support passing multiple tags to the action, but image scan just needs one
-    - name: Get single image tag
-      id: image_tag
-      shell: bash
-      run: |
-        IMAGE_TAG=$(echo $TAGS|head -1|cut -d' ' -f1)
-        echo "Setting image tag to ${IMAGE_TAG}"
-        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
-        echo "Setting full image tag to ${IMAGE_TAG}:${IMAGE_TAG}"
-        echo "image_tag_full=${IMAGE}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
-      env:
-        TAGS: ${{ inputs.container_tags }}
-        IMAGE: ${{ format('{0}/{1}', inputs.container_registry, steps.image_name.outputs.image_name) }}
-
-    - name: Run Trivy vulnerability scanner
-      if: inputs.scan == 'true'
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ${{ steps.image_tag.outputs.image_tag_full }}
-        format: 'table'
-        exit-code: '1'
-        ignore-unfixed: true
-        vuln-type: 'os,library'
-        severity: 'CRITICAL'
-        security-checks: 'vuln'
-
-    # Run tests for the built image
-
-    # - name: Set up Go
-    #   if: inputs.test == 'true'
-    #   uses: actions/setup-go@v3
-    #   with:
-    #     go-version-file: ${{ inputs.project_subdirectory }}/go.mod
-    #     cache: true
-    #     cache-dependency-path: ${{ inputs.project_subdirectory }}/go.sum
-
-    - name: Run tests for container image
-      if: inputs.test == 'true'
-      shell: bash
-      run: |
-        cd ${WORKDIR}
-        go version
-        go mod init test && go mod tidy
-        go test -v -timeout 30m
-      env:
-        WORKDIR: ${{ inputs.project_subdirectory }}
-        IMAGE_TAG: ${{ steps.image_tag.outputs.image_tag_full }}
-
-    # Push docker image to the registry
-    # https://github.com/docker/build-push-action
-    - name: Push Docker image
-      id: push_image
-      if: inputs.push == 'true'
-      uses: docker/build-push-action@v3
-      with:
-        platforms: ${{ inputs.platforms }}
-        context: ${{ inputs.project_subdirectory }}
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-
-    # Sign the image
-
-    - name: Set up cosign
-      if: inputs.sign == 'true'
-      uses: sigstore/cosign-installer@v3
-    
-    # cosign recommends to use image digest for signing
-    # --yes argument is used to upload transactional log
-    - name: Sign the image
-      if: inputs.sign == 'true'
-      shell: bash
-      run: |
-        echo Image is ${IMAGE}
-        echo "${COSIGN_KEY}" | base64 -d > cosign.key
-        ls -la cosign.key
-        cosign sign --key cosign.key --yes ${IMAGE}
-      env:
-        IMAGE: ${{ format('{0}/{1}@{2}', inputs.container_registry, steps.image_name.outputs.image_name, steps.push_image.outputs.digest) }}
-        COSIGN_KEY: ${{ inputs.cosign_key }}
-        COSIGN_PASSWORD: ${{ inputs.cosign_key_password }}
+      - name: Rebuild without cache (force refresh)
+        uses: docker/build-push-action@v3
+        with:
+          context: ./utils/jnlp
+          push: true
+          tags: ghcr.io/tbe-entertainment/devops-tools:cache-refresh
+          cache-from: none
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
