@@ -118,8 +118,8 @@ runs:
         load: ${{ inputs.scan }}   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: none
+        cache-to: none
         platforms: ${{ inputs.platforms }} 
 
     # We support passing multiple tags to the action, but image scan just needs one
