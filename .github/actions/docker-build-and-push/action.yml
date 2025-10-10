@@ -126,7 +126,7 @@ runs:
       with:
         context: ./utils/jnlp
         push: true
-        tags: ghcr.io/tbe-entertainment/devops-tools/jnlp:cache-refresh
+        tags: ghcr.io/tbe-entertainment/devops-tools/jnlp:cache-refresh-1
         cache-from: none
         cache-to: type=gha,mode=max
         platforms: linux/amd64
