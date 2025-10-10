@@ -115,9 +115,9 @@ runs:
       uses: docker/build-push-action@v3
       with:
         context: ${{ inputs.project_subdirectory }} 
-        load: ${{ inputs.scan }}   # to keep docker image locally for image scan
+        # load: ${{ inputs.scan }}   # to keep docker image locally for image scan
         tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        # labels: ${{ steps.meta.outputs.labels }}
         cache-from: none
         cache-to: none
         platforms: ${{ inputs.platforms }} 
